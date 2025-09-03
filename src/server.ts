@@ -14,9 +14,11 @@ const io: ioServer = new ioServer(server, {
     cors: { origin: "*" }
 });
 
-const conferenceNamespace: Namespace = io.of("/conference");
+const meetingNamespace: Namespace = io.of("/meeting");
 
-conferenceNamespace.on("connection", (socket: Socket) => {
+meetingNamespace.on("connection", (socket: Socket) => {
+    console.log("Socket connected: " + socket.id);
+
     socket.on("join", (roomId: string) => {
         socket.join(roomId);
         socket.data.roomId = roomId;
@@ -25,15 +27,15 @@ conferenceNamespace.on("connection", (socket: Socket) => {
     });
 
     socket.on("offer", (data: { socketId: string, offer: RTCSessionDescriptionInit }) => {
-        conferenceNamespace.to(data.socketId).emit("offer", { socketId: socket.id, offer: data.offer });
+        meetingNamespace.to(data.socketId).emit("offer", { socketId: socket.id, offer: data.offer });
     })
 
     socket.on("answer", (data: { socketId: string, answer: RTCSessionDescriptionInit }) => {
-        conferenceNamespace.to(data.socketId).emit("answer", { socketId: socket.id, answer: data.answer });
+        meetingNamespace.to(data.socketId).emit("answer", { socketId: socket.id, answer: data.answer });
     });
 
     socket.on("iceCandidate", (data: { socketId: string, candidate: RTCIceCandidate }) => {
-        conferenceNamespace.to(data.socketId).emit("iceCandidate", { socketId: socket.id, candidate: data.candidate });
+        meetingNamespace.to(data.socketId).emit("iceCandidate", { socketId: socket.id, candidate: data.candidate });
     });
 
     socket.on("leave", (roomId: string) => {
@@ -43,6 +45,8 @@ conferenceNamespace.on("connection", (socket: Socket) => {
     });
 
     socket.on("disconnect", () => {
+        console.log("Socket disconnected: " + socket.id);
+
         if (socket.data.roomId) {
             socket.to(socket.data.roomId).emit("user-leave", socket.id);
         }
