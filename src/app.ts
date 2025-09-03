@@ -1,17 +1,21 @@
-import express, { Express, Request, Response } from "express";
+import express, { Express } from "express";
+import cors from "cors";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes";
 import { authMiddleware } from "./middlewares/auth.middleware";
 
 const app: Express = express();
-app.use(express.json());
+
+app.use(cors({
+    origin: "http://localhost:4200",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true
+}));
+
+app.use(express.json({ type: "application/json" }));
 
 app.use(cookieParser());
 
 app.use("/auth", authRoutes);
-
-app.get("/protected", authMiddleware, (request: Request, response: Response) => {
-    response.json({ message: `Hello user ${request.body.user?.id}` })
-});
 
 export default app;
