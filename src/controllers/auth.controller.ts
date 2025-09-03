@@ -1,95 +1,134 @@
 import { Request, Response } from "express";
-import { loginUser, refreshAccessToken, signUpUser } from "services/auth.service";
+import { User } from "@prisma/client";
 import { ACCESS_TOKEN_EXPIRES_IN, REFRESH_TOKEN_EXPIRES_IN } from "config/env";
 import ms from "ms";
+import { authService } from "services/auth.service";
 
-export async function signUp(request: Request, response: Response): Promise<void> {
-    const email: string | null = request.body.email;
-    const password: string | null = request.body.password;
+export const authController = {
+    async signUp(request: Request, response: Response): Promise<void> {
+        try {
+            const email: string = request.body.email;
+            const name: string = request.body.name;
+            const surname: string = request.body.surname;
+            const password: string = request.body.password;
 
-    if (!email || !password) {
-        response.status(400).json({ message: "Missing email or password" });
-        return;
-    }
+            const result: { accessToken: string, refreshToken: string } | null = await authService.signUpUser(email, name, surname, password);
 
-    const result: { accessToken: string, refreshToken: string } | null = await signUpUser(email, password);
+            if (result) {
+                response.cookie("__Secure-AccessToken", result.accessToken, {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: "strict",
+                    maxAge: ms(ACCESS_TOKEN_EXPIRES_IN)
+                });
 
-    if (result) {
-        response.cookie("__Secure-AccessToken", result.accessToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "strict",
-            maxAge: ms(ACCESS_TOKEN_EXPIRES_IN)
-        });
+                response.cookie("__Secure-RefreshToken", result.refreshToken, {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: "strict",
+                    maxAge: ms(REFRESH_TOKEN_EXPIRES_IN)
+                });
 
-        response.cookie("__Secure-RefreshToken", result.refreshToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "strict",
-            maxAge: ms(REFRESH_TOKEN_EXPIRES_IN)
-        });
+                response.status(201).json({ message: "Signed up successfully" });
+            }
+            else {
+                response.status(400).json({ message: "User account with that phone number already exists" });
+            }
+        }
+        catch (error) {
+            console.error(error);
+            response.status(500).json({ message: "Internal server error" });
+        }
+    },
 
-        response.status(201).json({ message: "Signed up successfully" });
-    }
-    else {
-        response.status(400).json({ message: "User account with that email already exists" });
-    }
-}
+    async login(request: Request, response: Response): Promise<void> {
+        try {
+            const email: string = request.body.email;
+            const password: string = request.body.password;
 
-export async function login(request: Request, response: Response): Promise<void> {
-    const email: string = request.body.email;
-    const password: string = request.body.password;
+            const result: { accessToken: string, refreshToken: string } | null = await authService.loginUser(email, password);
 
-    if (!email || !password) {
-        response.status(400).json({ message: "Missing email or password" });
-        return;
-    }
+            if (result) {
+                response.cookie("__Secure-AccessToken", result.accessToken, {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: "strict",
+                    maxAge: ms(ACCESS_TOKEN_EXPIRES_IN)
+                });
 
-    const result: { accessToken: string, refreshToken: string } | null = await loginUser(email, password);
+                response.cookie("__Secure-RefreshToken", result.refreshToken, {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: "strict",
+                    maxAge: ms(REFRESH_TOKEN_EXPIRES_IN)
+                });
 
-    if (result) {
-        response.cookie("__Secure-AccessToken", result.accessToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "strict",
-            maxAge: ms(ACCESS_TOKEN_EXPIRES_IN)
-        });
+                response.status(200).json({ message: "Loged in successfully" });
+            }
+            else {
+                response.status(401).json({ message: "Invalid credentials" });
+            }
+        }
+        catch (error) {
+            console.error(error);
+            response.status(500).json({ message: "Internal server error" });
+        }
+    },
 
-        response.cookie("__Secure-RefreshToken", result.refreshToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "strict",
-            maxAge: ms(REFRESH_TOKEN_EXPIRES_IN)
-        });
+    async getAuthorizedUser(request: Request, response: Response): Promise<void> {
+        try {
+            const userId: string = request.user!.id;
 
-        response.status(200).json({ message: "Loged in successfully" });
-    }
-    else {
-        response.status(401).json({ message: "Invalid credentials" });
-    }
-}
+            const user: Omit<User, "passwordHash"> | null = await authService.getAuthorizedUser(userId);
 
-export async function refreshToken(request: Request, response: Response): Promise<void> {
-    const refreshToken: string | null = request.cookies["__Secure-RefreshToken"];
+            if (user) {
+                response.status(200).json({ user });
+            }
+            else {
+                response.status(404).json({ message: "User not found" });
+            }
+        }
+        catch (error) {
+            console.error(error);
+            response.status(500).json({ message: "Internal server error" });
+        }
+    },
 
-    if (!refreshToken) {
-        response.status(401).json({ message: "Missing refresh token" });
-        return;
-    }
+    async logout(request: Request, response: Response): Promise<void> {
+        try {
+            response.clearCookie("__Secure-AccessToken");
+            response.clearCookie("__Secure-RefreshToken");
+            response.status(200).json({ message: "Logged out successfully" });
+        }
+        catch (error) {
+            console.error(error);
+            response.status(500).json({ message: "Internal server error" });
+        }
+    },
 
-    const accessToken: string | null = await refreshAccessToken(refreshToken);
+    async refreshToken(request: Request, response: Response): Promise<void> {
+        try {
+            const refreshToken: string = request.cookies["__Secure-RefreshToken"];
 
-    if (accessToken) {
-        response.cookie("__Secure-AccessToken", accessToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "strict",
-            maxAge: ms(ACCESS_TOKEN_EXPIRES_IN)
-        });
+            const accessToken: string | null = await authService.refreshAccessToken(refreshToken);
 
-        response.status(200).json({ message: "Access token has been successfully refreshed" });
-    }
-    else {
-        response.status(403).json({ message: "Invalid or expired token" });
+            if (accessToken) {
+                response.cookie("__Secure-AccessToken", accessToken, {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: "strict",
+                    maxAge: ms(ACCESS_TOKEN_EXPIRES_IN)
+                });
+
+                response.status(200).json({ message: "Access token has been successfully refreshed" });
+            }
+            else {
+                response.status(403).json({ message: "Invalid or expired token" });
+            }
+        }
+        catch (error) {
+            console.error(error);
+            response.status(500).json({ message: "Internal server error" });
+        }
     }
 }

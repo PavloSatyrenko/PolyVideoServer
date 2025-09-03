@@ -1,79 +1,90 @@
-import { PrismaClient } from "@prisma/client";
+import { jwt } from "utils/jwt";
+import { RefreshToken, User } from "@prisma/client";
 import bcrypt from "bcrypt";
-import { UserType } from "types/user.type";
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "utils/jwt";
-import { RefreshTokenType } from "types/refreshToken.type";
+import { authRepository } from "repositories/auth.repository";
 
-const prisma: PrismaClient = new PrismaClient();
+export const authService = {
+    async signUpUser(email: string, name: string, surname: string, password: string): Promise<{ accessToken: string, refreshToken: string } | null> {
+        try {
+            const existingUser: User | null = await authRepository.findUserByEmail(email);
 
-export async function signUpUser(email: string, password: string): Promise<{ accessToken: string, refreshToken: string } | null> {
-    try {
-        const existingUser: UserType | null = await prisma.user.findUnique({ where: { email: email } });
+            if (existingUser) {
+                return null;
+            }
 
-        if (existingUser) {
-            return null;
+            const passwordHash: string = await bcrypt.hash(password, 12);
+
+            const newUser: Omit<User, "id"> = {
+                name,
+                surname,
+                email: email,
+                passwordHash
+            };
+
+            const user: User = await authRepository.createUser(newUser);
+
+            const accessToken: string = jwt.generateAccessToken(user.id);
+            const refreshToken: string = jwt.generateRefreshToken(user.id);
+
+            await authRepository.createRefreshToken(refreshToken, user.id);
+
+            return { accessToken, refreshToken };
         }
-
-        const passwordHash: string = await bcrypt.hash(password, 12);
-
-        const user: UserType = await prisma.user.create({
-            data: { email, passwordHash }
-        });
-
-        const accessToken: string = generateAccessToken(user.id);
-        const refreshToken: string = generateRefreshToken(user.id);
-
-        await prisma.refreshToken.create({
-            data: { refreshToken: refreshToken, userId: user.id }
-        });
-
-        return { accessToken, refreshToken };
-    }
-    catch (error) {
-        console.log(error);
-        return null;
-    }
-}
-
-export async function loginUser(email: string, password: string): Promise<{ accessToken: string, refreshToken: string } | null> {
-    try {
-        const user: UserType | null = await prisma.user.findUnique({ where: { email: email } });
-
-        if (!user || !(bcrypt.compareSync(password, user.passwordHash))) {
-            return null;
+        catch (error) {
+            console.error(error);
+            throw error;
         }
+    },
 
-        const accessToken: string = generateAccessToken(user.id);
-        const refreshToken: string = generateRefreshToken(user.id);
+    async loginUser(email: string, password: string): Promise<{ accessToken: string, refreshToken: string } | null> {
+        try {
+            const user: User | null = await authRepository.findUserByEmail(email);
 
-        await prisma.refreshToken.create({
-            data: { refreshToken: refreshToken, userId: user.id }
-        });
+            if (!user || !(bcrypt.compareSync(password, user.passwordHash))) {
+                return null;
+            }
 
-        return { accessToken, refreshToken };
-    }
-    catch (error) {
-        console.log(error);
-        return null;
-    }
-}
+            const accessToken: string = jwt.generateAccessToken(user.id);
+            const refreshToken: string = jwt.generateRefreshToken(user.id);
 
-export async function refreshAccessToken(refreshToken: string): Promise<string | null> {
-    try {
-        const existingRefreshToken: RefreshTokenType | null = await prisma.refreshToken.findUnique({ where: { refreshToken: refreshToken } });
+            await authRepository.createRefreshToken(refreshToken, user.id);
 
-        if (!existingRefreshToken) {
-            return null;
+            return { accessToken, refreshToken };
         }
+        catch (error) {
+            console.error(error);
+            throw error;
+        }
+    },
 
-        const userId: number = verifyRefreshToken(refreshToken).id;
+    async getAuthorizedUser(userId: string): Promise<Omit<User, "passwordHash"> | null> {
+        try {
+            const user: Omit<User, "passwordHash"> | null = await authRepository.findUserById(userId);
+            return user;
+        }
+        catch (error) {
+            console.error(error);
+            throw error;
+        }
+    },
 
-        const accessToken: string = generateAccessToken(userId);
+    async refreshAccessToken(refreshToken: string): Promise<string | null> {
+        try {
+            const existingRefreshToken: RefreshToken | null = await authRepository.findRefreshToken(refreshToken);
 
-        return accessToken;
-    }
-    catch (error) {
-        console.log(error);
-        return null;
+            if (!existingRefreshToken) {
+                return null;
+            }
+
+            const user: { id: string } = jwt.verifyRefreshToken(refreshToken);
+
+            const accessToken: string = jwt.generateAccessToken(user.id);
+
+            return accessToken;
+        }
+        catch (error) {
+            console.error(error);
+            throw error;
+        }
     }
 }
