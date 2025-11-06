@@ -38,6 +38,22 @@ meetingNamespace.on("connection", (socket: Socket) => {
         meetingNamespace.to(data.socketId).emit("iceCandidate", { socketId: socket.id, candidate: data.candidate });
     });
 
+    socket.on("mute", () => {
+        socket.to(socket.data.roomId).emit("mute", socket.id);
+    });
+
+    socket.on("unmute", () => {
+        socket.to(socket.data.roomId).emit("unmute", socket.id);
+    });
+
+    socket.on("disable-video", () => {
+        socket.to(socket.data.roomId).emit("disable-video", socket.id);
+    });
+
+    socket.on("enable-video", () => {
+        socket.to(socket.data.roomId).emit("enable-video", socket.id);
+    });
+
     socket.on("leave", (roomId: string) => {
         socket.to(roomId).emit("user-leave", socket.id);
 
