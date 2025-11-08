@@ -54,6 +54,14 @@ meetingNamespace.on("connection", (socket: Socket) => {
         socket.to(socket.data.roomId).emit("enable-video", socket.id);
     });
 
+    socket.on("start-screen-share", () => {
+        socket.to(socket.data.roomId).emit("start-screen-share", socket.id);
+    });
+
+    socket.on("stop-screen-share", () => {
+        socket.to(socket.data.roomId).emit("stop-screen-share", socket.id);
+    });
+
     socket.on("leave", (roomId: string) => {
         socket.to(roomId).emit("user-leave", socket.id);
 
