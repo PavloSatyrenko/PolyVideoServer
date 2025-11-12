@@ -18,14 +18,14 @@ export const authController = {
                 response.cookie("__Secure-AccessToken", result.accessToken, {
                     httpOnly: true,
                     secure: true,
-                    sameSite: "strict",
+                    sameSite: "none",
                     maxAge: ms(ACCESS_TOKEN_EXPIRES_IN)
                 });
 
                 response.cookie("__Secure-RefreshToken", result.refreshToken, {
                     httpOnly: true,
                     secure: true,
-                    sameSite: "strict",
+                    sameSite: "none",
                     maxAge: ms(REFRESH_TOKEN_EXPIRES_IN)
                 });
 
@@ -52,14 +52,14 @@ export const authController = {
                 response.cookie("__Secure-AccessToken", result.accessToken, {
                     httpOnly: true,
                     secure: true,
-                    sameSite: "strict",
+                    sameSite: "none",
                     maxAge: ms(ACCESS_TOKEN_EXPIRES_IN)
                 });
 
                 response.cookie("__Secure-RefreshToken", result.refreshToken, {
                     httpOnly: true,
                     secure: true,
-                    sameSite: "strict",
+                    sameSite: "none",
                     maxAge: ms(REFRESH_TOKEN_EXPIRES_IN)
                 });
 
@@ -96,8 +96,16 @@ export const authController = {
 
     async logout(request: Request, response: Response): Promise<void> {
         try {
-            response.clearCookie("__Secure-AccessToken");
-            response.clearCookie("__Secure-RefreshToken");
+            response.clearCookie("__Secure-AccessToken", {
+                httpOnly: true,
+                secure: true,
+                sameSite: "none",
+            });
+            response.clearCookie("__Secure-RefreshToken", {
+                httpOnly: true,
+                secure: true,
+                sameSite: "none",
+            });
             response.status(200).json({ message: "Logged out successfully" });
         }
         catch (error) {
@@ -116,7 +124,7 @@ export const authController = {
                 response.cookie("__Secure-AccessToken", accessToken, {
                     httpOnly: true,
                     secure: true,
-                    sameSite: "strict",
+                    sameSite: "none",
                     maxAge: ms(ACCESS_TOKEN_EXPIRES_IN)
                 });
 
