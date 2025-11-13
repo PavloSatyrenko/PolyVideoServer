@@ -29,7 +29,7 @@ export const authRepository = {
     },
 
     async createRefreshToken(refreshToken: string, userId: string): Promise<void> {
-        prisma.refreshToken.create({
+        await prisma.refreshToken.create({
             data: {
                 refreshToken: refreshToken,
                 userId: userId
