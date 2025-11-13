@@ -15,9 +15,5 @@ export const meetingsValidator = {
             .optional()
             .isISO8601().withMessage("startTime must be a valid ISO 8601 date string")
             .toDate(),
-        body("endTime")
-            .optional()
-            .isISO8601().withMessage("endTime must be a valid ISO 8601 date string")
-            .toDate(),
     ]
 }

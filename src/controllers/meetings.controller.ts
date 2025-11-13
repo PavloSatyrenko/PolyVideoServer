@@ -8,10 +8,9 @@ export const meetingsController = {
             const title: string = request.body.title;
             const isPlanned: boolean = request.body.isPlanned;
             const startTime: Date | undefined = request.body.startTime ? new Date(request.body.startTime) : undefined;
-            const endTime: Date | undefined = request.body.endTime ? new Date(request.body.endTime) : undefined;
             const ownerId: string = request.user!.id;
 
-            const meeting: Meeting = await meetingsService.createMeeting(ownerId, title, isPlanned, startTime, endTime);
+            const meeting: Meeting = await meetingsService.createMeeting(ownerId, title, isPlanned, startTime);
 
             response.status(201).json(meeting);
         }
