@@ -7,7 +7,7 @@ import meetingsRoutes from "./routes/meetings.routes";
 const app: Express = express();
 
 app.use(cors({
-    origin: "http://localhost:4200",
+    origin: ["http://localhost:4200", "https://polyvideo-1ca6f.web.app"],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true
 }));
