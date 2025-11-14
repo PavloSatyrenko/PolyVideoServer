@@ -82,7 +82,7 @@ export const authController = {
             const user: Omit<User, "passwordHash"> | null = await authService.getAuthorizedUser(userId);
 
             if (user) {
-                response.status(200).json({ user });
+                response.status(200).json(user);
             }
             else {
                 response.status(404).json({ message: "User not found" });

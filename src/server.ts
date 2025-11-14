@@ -19,11 +19,20 @@ const meetingNamespace: Namespace = io.of("/meeting");
 meetingNamespace.on("connection", (socket: Socket) => {
     console.log("Socket connected: " + socket.id);
 
-    socket.on("join", (roomId: string) => {
-        socket.join(roomId);
-        socket.data.roomId = roomId;
+    socket.on("join", (data: { roomCode: string, name: string }) => {
+        socket.join(data.roomCode);
+        socket.data.roomId = data.roomCode;
+        socket.data.name = data.name;
 
-        socket.to(roomId).emit("new-user", socket.id);
+        socket.to(data.roomCode).emit("new-user", { socketId: socket.id, name: data.name });
+
+        socket.emit("all-users", Array.from(meetingNamespace.adapter.rooms.get(data.roomCode) ?? [])
+            .filter((socketId: string) => socketId !== socket.id)
+            .map((socketId: string) => ({
+                socketId: socketId,
+                name: meetingNamespace.sockets.get(socketId)!.data.name
+            }))
+        );
     });
 
     socket.on("offer", (data: { socketId: string, offer: RTCSessionDescriptionInit }) => {
