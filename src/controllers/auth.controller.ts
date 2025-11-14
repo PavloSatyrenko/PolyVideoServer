@@ -63,10 +63,10 @@ export const authController = {
                     maxAge: ms(REFRESH_TOKEN_EXPIRES_IN)
                 });
 
-                response.status(200).json({ message: "Loged in successfully" });
+                response.status(200).json({ message: "Logged in successfully" });
             }
             else {
-                response.status(401).json({ message: "Invalid credentials" });
+                response.status(400).json({ message: "Invalid credentials" });
             }
         }
         catch (error) {
