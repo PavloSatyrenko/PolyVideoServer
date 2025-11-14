@@ -7,5 +7,13 @@ export const meetingsRepository = {
         return await prisma.meeting.create({
             data: meeting
         });
+    },
+
+    async getMeetingById(meetingId: string): Promise<Meeting | null> {
+        return await prisma.meeting.findUnique({
+            where: {
+                id: meetingId
+            }
+        });
     }
 }

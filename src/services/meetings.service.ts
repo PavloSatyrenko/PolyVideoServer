@@ -18,5 +18,9 @@ export const meetingsService = {
             console.error(error);
             throw error;
         }
+    },
+
+    async getMeetingById(meetingId: string): Promise<Meeting | null> {
+        return await meetingsRepository.getMeetingById(meetingId);
     }
 }

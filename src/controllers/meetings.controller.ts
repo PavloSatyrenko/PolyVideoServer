@@ -20,7 +20,22 @@ export const meetingsController = {
         }
     },
 
-    async getMeetingOptions(request: Request, response: Response): Promise<void> {
+    async getMeetingById(request: Request, response: Response): Promise<void> {
+        try {
+            const meetingId: string = request.params.meetingId;
 
+            const meeting: Meeting | null = await meetingsService.getMeetingById(meetingId);
+
+            if (!meeting) {
+                response.status(404).json({ message: "Meeting not found" });
+                return;
+            }
+
+            response.status(200).json(meeting);
+        }
+        catch (error) {
+            console.error(error);
+            response.status(500).json({ message: "Internal server error" });
+        }
     }
 }

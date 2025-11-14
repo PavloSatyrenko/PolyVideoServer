@@ -1,4 +1,4 @@
-import { body } from "express-validator";
+import { body, param } from "express-validator";
 
 export const meetingsValidator = {
     createMeetingValidator: [
@@ -15,5 +15,11 @@ export const meetingsValidator = {
             .optional()
             .isISO8601().withMessage("startTime must be a valid ISO 8601 date string")
             .toDate(),
+    ],
+
+    getMeetingByIdValidator: [
+        param("meetingId")
+            .notEmpty().withMessage("Meeting ID is required")
+            .isUUID().withMessage("Meeting ID must be a valid UUID"),
     ]
 }
