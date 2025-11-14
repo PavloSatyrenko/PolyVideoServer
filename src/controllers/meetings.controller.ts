@@ -20,11 +20,11 @@ export const meetingsController = {
         }
     },
 
-    async getMeetingById(request: Request, response: Response): Promise<void> {
+    async getMeetingByCode(request: Request, response: Response): Promise<void> {
         try {
-            const meetingId: string = request.params.meetingId;
+            const meetingCode: string = request.params.meetingCode;
 
-            const meeting: Meeting | null = await meetingsService.getMeetingById(meetingId);
+            const meeting: Meeting | null = await meetingsService.getMeetingByCode(meetingCode);
 
             if (!meeting) {
                 response.status(404).json({ message: "Meeting not found" });

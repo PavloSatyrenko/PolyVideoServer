@@ -7,6 +7,6 @@ import { validate } from "utils/validate";
 const router: Router = Router();
 
 router.post("/", authMiddleware, meetingsValidator.createMeetingValidator, validate, meetingsController.createMeeting);
-router.get("/:meetingId", meetingsValidator.getMeetingByIdValidator, validate, meetingsController.getMeetingById);
+router.get("/:meetingCode", meetingsValidator.getMeetingByCodeValidator, validate, meetingsController.getMeetingByCode);
 
 export default router;

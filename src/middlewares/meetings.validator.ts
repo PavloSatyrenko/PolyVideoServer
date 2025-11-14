@@ -17,9 +17,9 @@ export const meetingsValidator = {
             .toDate(),
     ],
 
-    getMeetingByIdValidator: [
-        param("meetingId")
-            .notEmpty().withMessage("Meeting ID is required")
-            .isUUID().withMessage("Meeting ID must be a valid UUID"),
+    getMeetingByCodeValidator: [
+        param("meetingCode")
+            .notEmpty().withMessage("Meeting code is required")
+            .isString().withMessage("Meeting code must be a valid string"),
     ]
 }
