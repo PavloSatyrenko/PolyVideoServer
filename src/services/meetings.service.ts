@@ -1,6 +1,13 @@
 import { Meeting } from "@prisma/client";
 import { meetingsRepository } from "repositories/meetings.repository";
 
+type RecentMeetingType = {
+    id: string,
+    code: string,
+    name: string,
+    lastTimeJoined: Date
+}
+
 export const meetingsService = {
     async createMeeting(ownerId: string, title: string, isPlanned: boolean, startTime?: Date): Promise<Meeting> {
         try {
@@ -29,5 +36,27 @@ export const meetingsService = {
 
     async getMeetingByCode(meetingCode: string): Promise<Meeting | null> {
         return await meetingsRepository.getMeetingByCode(meetingCode);
+    },
+
+    async getRecentMeetings(userId: string): Promise<RecentMeetingType[]> {
+        const recentMeetings: { meeting: Pick<Meeting, "id" | "title" | "code">, addedAt: Date }[] = await meetingsRepository.getRecentMeetings(userId);
+
+        return recentMeetings.map((recentMeeting: { meeting: Pick<Meeting, "id" | "title" | "code">, addedAt: Date }) => ({
+            id: recentMeeting.meeting.id,
+            code: recentMeeting.meeting.code!,
+            name: recentMeeting.meeting.title,
+            lastTimeJoined: recentMeeting.addedAt
+        }));
+    },
+
+    async addMeetingToRecent(userId: string, meetingCode: string): Promise<boolean> {
+        const meeting: Meeting | null = await meetingsRepository.getMeetingByCode(meetingCode);
+
+        if (!meeting) {
+            return false;
+        }
+
+        await meetingsRepository.addMeetingToRecent(userId, meeting.id);
+        return true;
     }
 }

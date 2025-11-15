@@ -26,5 +26,45 @@ export const meetingsRepository = {
                 code: meetingCode
             }
         });
+    },
+
+    async getRecentMeetings(userId: string): Promise<{ meeting: Pick<Meeting, "id" | "title" | "code">, addedAt: Date }[]> {
+        return await prisma.recentMeeting.findMany({
+            where: {
+                userId: userId
+            },
+            select: {
+                meeting: {
+                    select: {
+                        id: true,
+                        title: true,
+                        code: true
+                    }
+                },
+                addedAt: true
+            },
+            orderBy: {
+                addedAt: "desc"
+            },
+        });
+    },
+
+    async addMeetingToRecent(userId: string, meetingId: string): Promise<void> {
+        await prisma.recentMeeting.upsert({
+            where: {
+                userId_meetingId: {
+                    userId: userId,
+                    meetingId: meetingId
+                }
+            },
+            update: {
+                addedAt: new Date()
+            },
+            create: {
+                userId: userId,
+                meetingId: meetingId
+            }
+        });
+
     }
 }

@@ -14,13 +14,14 @@ datasource db {
 }
 
 model User {
-    id            String         @id @default(uuid())
-    email         String         @unique
-    name          String
-    surname       String
-    passwordHash  String
-    refreshTokens RefreshToken[]
-    ownedMeetings Meeting[]
+    id             String          @id @default(uuid())
+    email          String          @unique
+    name           String
+    surname        String
+    passwordHash   String
+    refreshTokens  RefreshToken[]
+    ownedMeetings  Meeting[]
+    recentMeetings RecentMeeting[]
 }
 
 model RefreshToken {
@@ -32,13 +33,25 @@ model RefreshToken {
 }
 
 model Meeting {
-    id        String    @id @default(uuid())
-    code      String?   @unique
-    title     String
-    isStarted Boolean   @default(false)
-    isPlanned Boolean   @default(false)
-    startTime DateTime?
-    endTime   DateTime?
-    owner     User      @relation(fields: [ownerId], references: [id])
-    ownerId   String
+    id             String          @id @default(uuid())
+    code           String?         @unique
+    title          String
+    isStarted      Boolean         @default(false)
+    isPlanned      Boolean         @default(false)
+    startTime      DateTime?
+    endTime        DateTime?
+    owner          User            @relation(fields: [ownerId], references: [id])
+    ownerId        String
+    recentMeetings RecentMeeting[]
+}
+
+model RecentMeeting {
+    id        String   @id @default(uuid())
+    userId    String
+    user      User     @relation(fields: [userId], references: [id])
+    meetingId String
+    meeting   Meeting  @relation(fields: [meetingId], references: [id])
+    addedAt   DateTime @default(now())
+
+    @@unique([userId, meetingId])
 }

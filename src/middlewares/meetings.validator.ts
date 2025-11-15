@@ -21,5 +21,11 @@ export const meetingsValidator = {
         param("meetingCode")
             .notEmpty().withMessage("Meeting code is required")
             .isString().withMessage("Meeting code must be a valid string"),
-    ]
+    ],
+
+    addMeetingToRecentValidator: [
+        param("meetingCode")
+            .notEmpty().withMessage("Meeting code is required")
+            .isString().withMessage("Meeting code must be a valid string"),
+    ],
 }

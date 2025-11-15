@@ -1,6 +1,23 @@
 import { Request, Response, NextFunction } from "express";
 import { jwt } from "utils/jwt";
 
+export function optionalAuthMiddleware(request: Request, response: Response, next: NextFunction): void {
+    const accessToken: string | undefined = request.cookies["__Secure-AccessToken"];
+
+    if (!accessToken) {
+        next();
+        return;
+    }
+
+    try {
+        const user: { id: string } = jwt.verifyAccessToken(accessToken);
+        request.user = { id: user.id };
+        next();
+    } catch {
+        next();
+    }
+}
+
 export function authMiddleware(request: Request, response: Response, next: NextFunction): void {
     const accessToken: string | undefined = request.cookies["__Secure-AccessToken"];
 
