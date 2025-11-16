@@ -43,9 +43,16 @@ export const meetingsRepository = {
                 },
                 addedAt: true
             },
-            orderBy: {
-                addedAt: "desc"
-            },
+            orderBy: [
+                {
+                    addedAt: "desc",
+                },
+                {
+                    meeting: {
+                        id: "asc"
+                    }
+                }
+            ],
         });
     },
 
@@ -66,5 +73,28 @@ export const meetingsRepository = {
             }
         });
 
+    },
+
+    async getOwnedMeetings(userId: string): Promise<Meeting[]> {
+        return await prisma.meeting.findMany({
+            where: {
+                ownerId: userId
+            },
+            orderBy: {
+                id: "asc"
+            }
+        });
+    },
+
+    async startMeeting(meetingId: string): Promise<void> {
+        await prisma.meeting.update({
+            where: {
+                id: meetingId
+            },
+            data: {
+                isStarted: true,
+                startTime: new Date()
+            }
+        });
     }
 }

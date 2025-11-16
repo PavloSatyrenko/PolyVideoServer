@@ -38,7 +38,7 @@ model Meeting {
     title          String
     isStarted      Boolean         @default(false)
     isPlanned      Boolean         @default(false)
-    startTime      DateTime?
+    startTime      DateTime        @default(now())
     endTime        DateTime?
     owner          User            @relation(fields: [ownerId], references: [id])
     ownerId        String

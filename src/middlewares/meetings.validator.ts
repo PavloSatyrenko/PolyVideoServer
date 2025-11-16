@@ -28,4 +28,10 @@ export const meetingsValidator = {
             .notEmpty().withMessage("Meeting code is required")
             .isString().withMessage("Meeting code must be a valid string"),
     ],
+
+    startMeetingValidator: [
+        param("meetingCode")
+            .notEmpty().withMessage("Meeting code is required")
+            .isString().withMessage("Meeting code must be a valid string"),
+    ],
 }

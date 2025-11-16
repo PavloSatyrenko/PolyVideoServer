@@ -16,7 +16,7 @@ export const meetingsService = {
                 title,
                 isPlanned,
                 isStarted: !isPlanned,
-                startTime: startTime || null,
+                startTime: startTime || new Date(),
             };
 
             const createdMeeting: Meeting = await meetingsRepository.createMeeting(meeting);
@@ -58,5 +58,48 @@ export const meetingsService = {
 
         await meetingsRepository.addMeetingToRecent(userId, meeting.id);
         return true;
-    }
+    },
+
+    async getOwnedMeetings(userId: string): Promise<Meeting[]> {
+        return (await meetingsRepository.getOwnedMeetings(userId))
+            .sort((a, b) => {
+                if ((!a.isStarted && !a.endTime) && b.isStarted) {
+                    return -1;
+                }
+
+                if (a.isStarted && (!b.isStarted && !b.endTime)) {
+                    return 1;
+                }
+
+                if ((a.isStarted && !a.endTime) && b.endTime) {
+                    return -1;
+                }
+
+                if (a.endTime && (b.isStarted && !b.endTime)) {
+                    return 1;
+                }
+
+                return Math.abs(a.startTime.getTime() - Date.now()) - Math.abs(b.startTime.getTime() - Date.now())
+            });
+    },
+
+    async startMeeting(meetingCode: string, userId: string): Promise<number> {
+        const meeting: Meeting | null = await meetingsRepository.getMeetingByCode(meetingCode);
+
+        if (!meeting) {
+            return 404;
+        }
+
+        if (meeting.isStarted) {
+            return 400;
+        }
+
+        if (meeting.ownerId !== userId) {   
+            return 403;
+        }
+
+        await meetingsRepository.startMeeting(meeting.id);
+
+        return 200;
+    },        
 }

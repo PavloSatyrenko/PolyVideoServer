@@ -78,5 +78,48 @@ export const meetingsController = {
             console.error(error);
             response.status(500).json({ message: "Internal server error" });
         }
-    }
+    },
+
+    async getOwnedMeetings(request: Request, response: Response): Promise<void> {
+        try {
+            const userId: string = request.user!.id;
+
+            const ownedMeetings: Meeting[] = await meetingsService.getOwnedMeetings(userId);
+            response.status(200).json(ownedMeetings);
+        }
+        catch (error) {
+            console.error(error);
+            response.status(500).json({ message: "Internal server error" });
+        }
+    },
+
+    async startMeeting(request: Request, response: Response): Promise<void> {
+        try {
+            const meetingCode: string = request.params.meetingCode;
+            const userId: string = request.user!.id;
+
+            const startResponse: number = await meetingsService.startMeeting(meetingCode, userId);
+
+            if (startResponse === 404) {
+                response.status(404).json({ message: "Meeting not found" });
+                return;
+            }
+
+            if (startResponse === 400) {
+                response.status(400).json({ message: "Meeting has already been started" });
+                return;
+            }
+
+            if (startResponse === 403) {
+                response.status(403).json({ message: "Forbidden: You are not the owner of this meeting" });
+                return;
+            }
+
+            response.status(200).json({ message: "Meeting started successfully" });
+        }
+        catch (error) {
+            console.error(error);
+            response.status(500).json({ message: "Internal server error" });
+        }
+    },
 }
