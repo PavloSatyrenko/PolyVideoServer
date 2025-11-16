@@ -30,7 +30,8 @@ meetingNamespace.on("connection", (socket: Socket) => {
             .filter((socketId: string) => socketId !== socket.id)
             .map((socketId: string) => ({
                 socketId: socketId,
-                name: meetingNamespace.sockets.get(socketId)!.data.name
+                name: meetingNamespace.sockets.get(socketId)!.data.name,
+                isHandUp: meetingNamespace.sockets.get(socketId)!.data.isHandUp
             }))
         );
     });
@@ -69,6 +70,16 @@ meetingNamespace.on("connection", (socket: Socket) => {
 
     socket.on("stop-screen-share", () => {
         socket.to(socket.data.roomId).emit("stop-screen-share", socket.id);
+    });
+
+    socket.on("hand-up", () => {
+        socket.data.isHandUp = true;
+        socket.to(socket.data.roomId).emit("hand-up", socket.id);
+    });
+
+    socket.on("hand-down", () => {
+        socket.data.isHandUp = false;
+        socket.to(socket.data.roomId).emit("hand-down", socket.id);
     });
 
     socket.on("leave", (roomId: string) => {
