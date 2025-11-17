@@ -82,6 +82,10 @@ meetingNamespace.on("connection", (socket: Socket) => {
         socket.to(socket.data.roomId).emit("hand-down", socket.id);
     });
 
+    socket.on("chat-message", (message: { id: string, senderName: string, content: string }) => {
+        socket.to(socket.data.roomId).emit("chat-message", message);
+    });
+
     socket.on("leave", (roomId: string) => {
         socket.to(roomId).emit("user-leave", socket.id);
 
