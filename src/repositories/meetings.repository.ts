@@ -96,5 +96,25 @@ export const meetingsRepository = {
                 startTime: new Date()
             }
         });
+    },
+
+    async updateMeetingOptions(
+        meetingId: string,
+        title: string,
+        isWaitingRoom: boolean,
+        isScreenSharing: boolean,
+        isGuestAllowed: boolean
+    ): Promise<void> {
+        await prisma.meeting.updateMany({
+            where: {
+                id: meetingId
+            },
+            data: {
+                title: title,
+                isWaitingRoom: isWaitingRoom,
+                isScreenSharing: isScreenSharing,
+                isGuestAllowed: isGuestAllowed
+            }
+        });
     }
 }

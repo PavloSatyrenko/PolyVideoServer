@@ -13,11 +13,14 @@ export const meetingsController = {
     async createMeeting(request: Request, response: Response): Promise<void> {
         try {
             const title: string = request.body.title;
+            const isGuestAllowed: boolean = request.body.isGuestAllowed;
+            const isWaitingRoom: boolean = request.body.isWaitingRoom;
+            const isScreenSharing: boolean = request.body.isScreenSharing;
             const isPlanned: boolean = request.body.isPlanned;
             const startTime: Date | undefined = request.body.startTime ? new Date(request.body.startTime) : undefined;
             const ownerId: string = request.user!.id;
 
-            const meeting: Meeting = await meetingsService.createMeeting(ownerId, title, isPlanned, startTime);
+            const meeting: Meeting = await meetingsService.createMeeting(ownerId, title, isGuestAllowed, isWaitingRoom, isScreenSharing, isPlanned, startTime);
 
             response.status(201).json(meeting);
         }
@@ -122,4 +125,40 @@ export const meetingsController = {
             response.status(500).json({ message: "Internal server error" });
         }
     },
+
+    async updateMeetingOptions(request: Request, response: Response): Promise<void> {
+        try {
+            const meetingCode: string = request.params.meetingCode;
+            const title: string = request.body.title;
+            const isWaitingRoom: boolean = request.body.isWaitingRoom;
+            const isScreenSharing: boolean = request.body.isScreenSharing;
+            const isGuestAllowed: boolean = request.body.isGuestAllowed;
+            const userId: string = request.user!.id;
+
+            const updateResponse: number = await meetingsService.updateMeetingOptions(
+                meetingCode,
+                userId,
+                title,
+                isWaitingRoom,
+                isScreenSharing,
+                isGuestAllowed
+            );
+
+            if (updateResponse === 404) {
+                response.status(404).json({ message: "Meeting not found" });
+                return;
+            }
+
+            if (updateResponse === 403) {
+                response.status(403).json({ message: "Forbidden: You are not the owner of this meeting" });
+                return;
+            }
+
+            response.status(200).json({ message: "Meeting options updated successfully" });
+        }
+        catch (error) {
+            console.error(error);
+            response.status(500).json({ message: "Internal server error" });
+        }
+    }
 }

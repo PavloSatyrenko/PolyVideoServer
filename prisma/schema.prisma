@@ -33,16 +33,19 @@ model RefreshToken {
 }
 
 model Meeting {
-    id             String          @id @default(uuid())
-    code           String?         @unique
-    title          String
-    isStarted      Boolean         @default(false)
-    isPlanned      Boolean         @default(false)
-    startTime      DateTime        @default(now())
-    endTime        DateTime?
-    owner          User            @relation(fields: [ownerId], references: [id])
-    ownerId        String
-    recentMeetings RecentMeeting[]
+    id              String          @id @default(uuid())
+    code            String?         @unique
+    title           String
+    isStarted       Boolean         @default(false)
+    isPlanned       Boolean         @default(false)
+    startTime       DateTime        @default(now())
+    endTime         DateTime?
+    isWaitingRoom   Boolean         @default(true)
+    isScreenSharing Boolean         @default(true)
+    isGuestAllowed  Boolean         @default(true)
+    owner           User            @relation(fields: [ownerId], references: [id])
+    ownerId         String
+    recentMeetings  RecentMeeting[]
 }
 
 model RecentMeeting {

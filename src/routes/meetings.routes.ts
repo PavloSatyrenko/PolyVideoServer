@@ -12,5 +12,6 @@ router.post("/recent/:meetingCode", authMiddleware, meetingsValidator.addMeeting
 router.get("/owned", authMiddleware, meetingsController.getOwnedMeetings);
 router.get("/:meetingCode", meetingsValidator.getMeetingByCodeValidator, validate, meetingsController.getMeetingByCode);
 router.post("/start/:meetingCode", authMiddleware, meetingsValidator.startMeetingValidator, validate, meetingsController.startMeeting);
+router.put("/:meetingCode", authMiddleware, meetingsValidator.updateMeetingOptionsValidator, validate, meetingsController.updateMeetingOptions);
 
 export default router;

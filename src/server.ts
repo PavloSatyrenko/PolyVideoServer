@@ -48,6 +48,10 @@ meetingNamespace.on("connection", (socket: Socket) => {
         meetingNamespace.to(data.socketId).emit("iceCandidate", { socketId: socket.id, candidate: data.candidate });
     });
 
+    socket.on("meeting-info-updated", (data: { title: string, isWaitingRoom: boolean, isScreenSharing: boolean, isGuestAllowed: boolean }) => {
+        socket.to(socket.data.roomId).emit("meeting-info-updated", data);
+    });
+
     socket.on("mute", () => {
         socket.to(socket.data.roomId).emit("mute", socket.id);
     });

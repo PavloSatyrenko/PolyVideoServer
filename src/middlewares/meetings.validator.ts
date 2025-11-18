@@ -8,6 +8,15 @@ export const meetingsValidator = {
             .isString().withMessage("Title must be a string")
             .isLength({ min: 2, max: 200 }).withMessage("Title must be between 2 and 200 characters")
             .escape(),
+        body("isGuestAllowed")
+            .notEmpty().withMessage("isGuestAllowed is required")
+            .isBoolean().withMessage("isGuestAllowed must be a boolean"),
+        body("isWaitingRoom")
+            .notEmpty().withMessage("isWaitingRoom is required")
+            .isBoolean().withMessage("isWaitingRoom must be a boolean"),
+        body("isScreenSharing")
+            .notEmpty().withMessage("isScreenSharing is required")
+            .isBoolean().withMessage("isScreenSharing must be a boolean"),
         body("isPlanned")
             .notEmpty().withMessage("isPlanned is required")
             .isBoolean().withMessage("isPlanned must be a boolean"),
@@ -34,4 +43,19 @@ export const meetingsValidator = {
             .notEmpty().withMessage("Meeting code is required")
             .isString().withMessage("Meeting code must be a valid string"),
     ],
-}
+
+    updateMeetingOptionsValidator: [
+        param("meetingCode")
+            .notEmpty().withMessage("Meeting code is required")
+            .isString().withMessage("Meeting code must be a valid string"),
+        body("isWaitingRoom")
+            .notEmpty().withMessage("isWaitingRoom is required")
+            .isBoolean().withMessage("isWaitingRoom must be a boolean"),
+        body("isScreenSharing")
+            .notEmpty().withMessage("isScreenSharing is required")
+            .isBoolean().withMessage("isScreenSharing must be a boolean"),
+        body("isGuestAllowed")
+            .notEmpty().withMessage("isGuestAllowed is required")
+            .isBoolean().withMessage("isGuestAllowed must be a boolean"),
+    ]
+};

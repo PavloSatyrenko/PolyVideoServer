@@ -9,12 +9,23 @@ type RecentMeetingType = {
 }
 
 export const meetingsService = {
-    async createMeeting(ownerId: string, title: string, isPlanned: boolean, startTime?: Date): Promise<Meeting> {
+    async createMeeting(
+        ownerId: string,
+        title: string,
+        isGuestAllowed: boolean,
+        isWaitingRoom: boolean,
+        isScreenSharing: boolean,
+        isPlanned: boolean,
+        startTime?: Date
+    ): Promise<Meeting> {
         try {
             const meeting: Omit<Meeting, "id" | "endTime" | "code"> = {
                 ownerId,
                 title,
                 isPlanned,
+                isGuestAllowed,
+                isWaitingRoom,
+                isScreenSharing,
                 isStarted: !isPlanned,
                 startTime: startTime || new Date(),
             };
@@ -94,12 +105,41 @@ export const meetingsService = {
             return 400;
         }
 
-        if (meeting.ownerId !== userId) {   
+        if (meeting.ownerId !== userId) {
             return 403;
         }
 
         await meetingsRepository.startMeeting(meeting.id);
 
         return 200;
-    },        
+    },
+
+    async updateMeetingOptions(
+        meetingCode: string,
+        userId: string,
+        title: string,
+        isWaitingRoom: boolean,
+        isScreenSharing: boolean,
+        isGuestAllowed: boolean
+    ): Promise<number> {
+        const meeting: Meeting | null = await meetingsRepository.getMeetingByCode(meetingCode);
+
+        if (!meeting) {
+            return 404;
+        }
+
+        if (meeting.ownerId !== userId) {
+            return 403;
+        }
+
+        await meetingsRepository.updateMeetingOptions(
+            meeting.id,
+            title,
+            isWaitingRoom,
+            isScreenSharing,
+            isGuestAllowed
+        );
+
+        return 200;
+    }
 }
