@@ -3,6 +3,7 @@ import { body, param } from "express-validator";
 export const meetingsValidator = {
     createMeetingValidator: [
         body("title")
+            .optional({ values: "falsy" })
             .trim()
             .notEmpty().withMessage("Title is required")
             .isString().withMessage("Title must be a string")

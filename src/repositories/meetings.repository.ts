@@ -1,4 +1,4 @@
-import { Meeting, PrismaClient } from "@prisma/client";
+import { Meeting, PrismaClient, User } from "@prisma/client";
 
 const prisma: PrismaClient = new PrismaClient();
 
@@ -6,6 +6,24 @@ export const meetingsRepository = {
     async createMeeting(meeting: Omit<Meeting, "id" | "endTime" | "code">): Promise<Meeting> {
         return await prisma.meeting.create({
             data: meeting
+        });
+    },
+
+    async getUserFullNameById(userId: string): Promise<string> {
+        return await prisma.user.findUnique({
+            where: {
+                id: userId
+            },
+            select: {
+                name: true,
+                surname: true
+            }
+        }).then((user: { name: string, surname: string } | null) => {
+            if (!user) {
+                return "User";
+            }
+
+            return `${user.name} ${user.surname}`;
         });
     },
 

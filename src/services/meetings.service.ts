@@ -19,6 +19,12 @@ export const meetingsService = {
         startTime?: Date
     ): Promise<Meeting> {
         try {
+            if (!title) {
+                const userName: string = await meetingsRepository.getUserFullNameById(ownerId);
+
+                title = userName + "'s Meeting";
+            }
+
             const meeting: Omit<Meeting, "id" | "endTime" | "code"> = {
                 ownerId,
                 title,
