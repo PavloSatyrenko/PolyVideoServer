@@ -5,13 +5,20 @@ import app from "./app";
 import { PORT } from "./config/env";
 import { Server } from "http";
 import { Server as ioServer, Namespace, Socket } from "socket.io";
+import { jwt } from "utils/jwt";
+import { authService } from "services/auth.service";
+import { User } from "@prisma/client";
+import { meetingsService } from "services/meetings.service";
 
 const server: Server = app.listen(PORT, () => {
     console.log("Server listening on port " + PORT);
 });
 
 const io: ioServer = new ioServer(server, {
-    cors: { origin: "*" }
+    cors: {
+        origin: ["http://localhost:4200", "https://polyvideo-1ca6f.web.app"],
+        credentials: true
+    }
 });
 
 const meetingNamespace: Namespace = io.of("/meeting");
@@ -19,10 +26,34 @@ const meetingNamespace: Namespace = io.of("/meeting");
 meetingNamespace.on("connection", (socket: Socket) => {
     console.log("Socket connected: " + socket.id);
 
-    socket.on("join", (data: { roomCode: string, name: string }) => {
+    socket.on("join", async (data: { roomCode: string, name: string }) => {
         socket.join(data.roomCode);
         socket.data.roomId = data.roomCode;
-        socket.data.name = data.name;
+
+        const cookies: Map<string, string> = new Map();
+
+        socket.request.headers.cookie?.split("; ").forEach((string: string) => {
+            const [key, value]: string[] = string.split("=");
+            cookies.set(key, value);
+        });
+
+        const accessToken: string | undefined = cookies.get("__Secure-AccessToken");
+
+        if (accessToken) {
+            const userId: string | undefined = jwt.verifyAccessToken(accessToken)?.id;
+
+            if (userId) {
+                const user: Omit<User, "passwordHash"> | null = await authService.getAuthorizedUser(userId);
+
+                if (user) {
+                    socket.data.name = `${user.name} ${user.surname}`;
+                    socket.data.userId = user.id;
+                }
+            }
+        }
+        else {
+            socket.data.name = data.name;
+        }
 
         socket.to(data.roomCode).emit("new-user", { socketId: socket.id, name: data.name });
 
@@ -84,6 +115,81 @@ meetingNamespace.on("connection", (socket: Socket) => {
     socket.on("hand-down", () => {
         socket.data.isHandUp = false;
         socket.to(socket.data.roomId).emit("hand-down", socket.id);
+    });
+
+    socket.on("mute-user", async (socketId: string) => {
+        try {
+            const isOwner: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomId, socket.data.userId || "");
+
+            if (!isOwner) {
+                return;
+            }
+        }
+        catch {
+            return;
+        }
+
+        meetingNamespace.to(socketId).emit("muted-by-owner");
+    });
+
+    socket.on("unmute-user", async (socketId: string) => {
+        try {
+            const isOwner: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomId, socket.data.userId || "");
+
+            if (!isOwner) {
+                return;
+            }
+        }
+        catch {
+            return;
+        }
+
+        meetingNamespace.to(socketId).emit("requested-unmute-by-owner");
+    });
+
+    socket.on("disable-video-user", async (socketId: string) => {
+        try {
+            const isOwner: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomId, socket.data.userId || "");
+
+            if (!isOwner) {
+                return;
+            }
+        }
+        catch {
+            return;
+        }
+
+        meetingNamespace.to(socketId).emit("video-disabled-by-owner");
+    });
+
+    socket.on("enable-video-user", async (socketId: string) => {
+        try {
+            const isOwner: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomId, socket.data.userId || "");
+
+            if (!isOwner) {
+                return;
+            }   
+        }
+        catch {
+            return;
+        }
+
+        meetingNamespace.to(socketId).emit("requested-enable-video-by-owner");
+    });
+
+    socket.on("remove-user", async (socketId: string) => {
+        try {
+            const isOwner: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomId, socket.data.userId || "");
+
+            if (!isOwner) {
+                return;
+            }
+        }
+        catch {
+            return;
+        }
+
+        meetingNamespace.to(socketId).emit("removed-from-meeting");
     });
 
     socket.on("chat-message", (message: { id: string, senderName: string, content: string }) => {

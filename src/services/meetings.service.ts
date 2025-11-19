@@ -147,5 +147,15 @@ export const meetingsService = {
         );
 
         return 200;
+    },
+
+    async isUserMeetingOwner(meetingCode: string, userId: string): Promise<boolean> {
+        const meeting: Meeting | null = await meetingsRepository.getMeetingByCode(meetingCode);
+
+        if (!meeting) {
+            return false;
+        }
+
+        return meeting.ownerId === userId;
     }
 }
