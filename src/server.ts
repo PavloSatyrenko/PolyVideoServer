@@ -69,7 +69,7 @@ meetingNamespace.on("connection", async (socket: Socket) => {
         }
     }
 
-    socket.on("join", (data: { roomCode: string, name: string }) => {
+    socket.on("join", async (data: { roomCode: string, name: string }) => {
         socket.join(data.roomCode);
         socket.data.roomId = data.roomCode;
 
@@ -78,6 +78,14 @@ meetingNamespace.on("connection", async (socket: Socket) => {
         }
 
         socket.to(data.roomCode).emit("new-user", { socketId: socket.id, name: socket.data.name });
+
+        if (socket.data.userId) {
+            const isOwner: boolean = await meetingsService.isUserMeetingOwner(data.roomCode, socket.data.userId);
+
+            if (isOwner) {
+                socket.to(data.roomCode).emit("owner-joined");
+            }
+        }
 
         socket.emit("all-users", Array.from(meetingNamespace.adapter.rooms.get(data.roomCode) ?? [])
             .filter((socketId: string) => socketId !== socket.id)
