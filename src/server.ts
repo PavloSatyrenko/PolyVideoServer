@@ -70,8 +70,13 @@ meetingNamespace.on("connection", (socket: Socket) => {
     socket.on("request-to-join", (data: { roomCode: string, name: string }) => {
         const adminId: string = Array.from(meetingNamespace.adapter.rooms.get(data.roomCode) ?? [])
             .find((socketId: string) => {
-                const socketInRoom: Socket | undefined = meetingNamespace.sockets.get(socketId);
-                return socketInRoom && socketInRoom.data.userId; // Assuming the first user with userId is the admin
+                const userId: string | undefined = meetingNamespace.sockets.get(socketId)!.data.userId;
+
+                if (!userId) {
+                    return false;
+                }
+
+                return meetingsService.isUserMeetingOwner(data.roomCode, userId);
             }) || "";
 
         if (adminId) {
