@@ -23,39 +23,61 @@ const io: ioServer = new ioServer(server, {
 
 const meetingNamespace: Namespace = io.of("/meeting");
 
-meetingNamespace.on("connection", (socket: Socket) => {
-    console.log("Socket connected: " + socket.id);
+meetingNamespace.on("connection", async (socket: Socket) => {
+    const cookies: Map<string, string> = new Map();
 
-    socket.on("join", async (data: { roomCode: string, name: string }) => {
+    socket.request.headers.cookie?.split("; ").forEach((string: string) => {
+        const [key, value]: string[] = string.split("=");
+        cookies.set(key, value);
+    });
+
+    const accessToken: string | undefined = cookies.get("__Secure-AccessToken");
+    const refreshToken: string | undefined = cookies.get("__Secure-RefreshToken");
+
+    let userId: string | undefined = undefined;
+
+    if (accessToken) {
+        try {
+            userId = jwt.verifyAccessToken(accessToken)?.id;
+        }
+        catch {
+            userId = undefined;
+        }
+    }
+
+    if (!userId && refreshToken) {
+        let newAccessToken: string | null;
+
+        try {
+            newAccessToken = await authService.refreshAccessToken(refreshToken);
+        }
+        catch {
+            newAccessToken = null;
+        }
+
+        if (newAccessToken) {
+            userId = jwt.verifyAccessToken(newAccessToken)?.id;
+        }
+    }
+
+    if (userId) {
+        const user: Omit<User, "passwordHash"> | null = await authService.getAuthorizedUser(userId);
+
+        if (user) {
+            socket.data.name = `${user.name} ${user.surname}`;
+            socket.data.userId = user.id;
+        }
+    }
+
+    socket.on("join", (data: { roomCode: string, name: string }) => {
         socket.join(data.roomCode);
         socket.data.roomId = data.roomCode;
 
-        const cookies: Map<string, string> = new Map();
-
-        socket.request.headers.cookie?.split("; ").forEach((string: string) => {
-            const [key, value]: string[] = string.split("=");
-            cookies.set(key, value);
-        });
-
-        const accessToken: string | undefined = cookies.get("__Secure-AccessToken");
-
-        if (accessToken) {
-            const userId: string | undefined = jwt.verifyAccessToken(accessToken)?.id;
-
-            if (userId) {
-                const user: Omit<User, "passwordHash"> | null = await authService.getAuthorizedUser(userId);
-
-                if (user) {
-                    socket.data.name = `${user.name} ${user.surname}`;
-                    socket.data.userId = user.id;
-                }
-            }
-        }
-        else {
+        if (!socket.data.name) {
             socket.data.name = data.name;
         }
 
-        socket.to(data.roomCode).emit("new-user", { socketId: socket.id, name: data.name });
+        socket.to(data.roomCode).emit("new-user", { socketId: socket.id, name: socket.data.name });
 
         socket.emit("all-users", Array.from(meetingNamespace.adapter.rooms.get(data.roomCode) ?? [])
             .filter((socketId: string) => socketId !== socket.id)
@@ -67,8 +89,15 @@ meetingNamespace.on("connection", (socket: Socket) => {
         );
     });
 
-    socket.on("request-to-join", (data: { roomCode: string, name: string }) => {
-        const adminId: string = Array.from(meetingNamespace.adapter.rooms.get(data.roomCode) ?? [])
+    socket.on("request-to-join", async (data: { roomCode: string, name: string }) => {
+        const ownerId: string = (await meetingsService.getMeetingByCode(data.roomCode))?.ownerId || "";
+
+        if (ownerId === socket.data.userId) {
+            socket.emit("request-approved");
+            return;
+        }
+
+        const adminSocketId: string = Array.from(meetingNamespace.adapter.rooms.get(data.roomCode) ?? [])
             .find((socketId: string) => {
                 const userId: string | undefined = meetingNamespace.sockets.get(socketId)!.data.userId;
 
@@ -76,11 +105,11 @@ meetingNamespace.on("connection", (socket: Socket) => {
                     return false;
                 }
 
-                return meetingsService.isUserMeetingOwner(data.roomCode, userId);
+                return userId === ownerId;
             }) || "";
 
-        if (adminId) {
-            meetingNamespace.to(adminId).emit("join-request", { socketId: socket.id, name: data.name });
+        if (adminSocketId) {
+            meetingNamespace.to(adminSocketId).emit("join-request", { socketId: socket.id, name: data.name });
         }
         else {
             socket.emit("admin-not-found");
@@ -230,11 +259,17 @@ meetingNamespace.on("connection", (socket: Socket) => {
         socket.leave(roomId);
     });
 
-    socket.on("disconnect", () => {
-        console.log("Socket disconnected: " + socket.id);
-
+    socket.on("disconnect", async () => {
         if (socket.data.roomId) {
             socket.to(socket.data.roomId).emit("user-leave", socket.id);
+
+            if (socket.data.userId) {
+                const isOwnerLeaving: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomId, socket.data.userId);
+
+                if (isOwnerLeaving) {
+                    socket.to(socket.data.roomId).emit("owner-left");
+                }
+            }
         }
     })
 });
@@ -256,11 +291,23 @@ chatNamespace.on("connection", async (socket: Socket) => {
     let userId: string | undefined = undefined;
 
     if (accessToken) {
-        userId = jwt.verifyAccessToken(accessToken)?.id;
+        try {
+            userId = jwt.verifyAccessToken(accessToken)?.id;
+        }
+        catch {
+            userId = undefined;
+        }
     }
 
     if (!userId && refreshToken) {
-        const newAccessToken: string | null = await authService.refreshAccessToken(refreshToken);
+        let newAccessToken: string | null;
+
+        try {
+            newAccessToken = await authService.refreshAccessToken(refreshToken);
+        }
+        catch {
+            newAccessToken = null;
+        }
 
         if (newAccessToken) {
             userId = jwt.verifyAccessToken(newAccessToken)?.id;
