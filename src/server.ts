@@ -23,7 +23,7 @@ const io: ioServer = new ioServer(server, {
 
 const meetingNamespace: Namespace = io.of("/meeting");
 
-meetingNamespace.on("connection", async (socket: Socket) => {
+meetingNamespace.use(async (socket: Socket, next) => {
     const cookies: Map<string, string> = new Map();
 
     socket.request.headers.cookie?.split("; ").forEach((string: string) => {
@@ -69,6 +69,10 @@ meetingNamespace.on("connection", async (socket: Socket) => {
         }
     }
 
+    next();
+});
+
+meetingNamespace.on("connection", async (socket: Socket) => {
     socket.on("join", async (data: { roomCode: string, name: string }) => {
         socket.join(data.roomCode);
         socket.data.roomId = data.roomCode;
@@ -285,7 +289,7 @@ meetingNamespace.on("connection", async (socket: Socket) => {
 
 const chatNamespace: Namespace = io.of("/chat");
 
-chatNamespace.on("connection", async (socket: Socket) => {
+chatNamespace.use(async (socket: Socket, next) => {
     const cookies: Map<string, string> = new Map();
 
     socket.request.headers.cookie?.split("; ").forEach((string: string) => {
@@ -324,12 +328,17 @@ chatNamespace.on("connection", async (socket: Socket) => {
 
     if (!userId) {
         socket.disconnect();
+        next(new Error("Unauthorized"));
         return;
     }
 
     socket.data.userId = userId;
 
+    next();
+});
+
+chatNamespace.on("connection", async (socket: Socket) => {
     socket.on("chat-message", (message: { userId: string, content: string }) => {
-        socket.to(userId).emit("chat-message", { socketId: socket.id, content: message.content });
+        socket.to(message.userId).emit("chat-message", { socketId: socket.id, content: message.content });
     });
 });
