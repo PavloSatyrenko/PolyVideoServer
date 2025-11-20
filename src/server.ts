@@ -74,8 +74,12 @@ meetingNamespace.use(async (socket: Socket, next) => {
 
 meetingNamespace.on("connection", async (socket: Socket) => {
     socket.on("join", async (data: { roomCode: string, name: string }) => {
+        socket.leave(data.roomCode + "-waiting");
+
         socket.join(data.roomCode);
-        socket.data.roomId = data.roomCode;
+
+        socket.data.roomCode = data.roomCode;
+        socket.data.isHandUp = false;
 
         if (!socket.data.name) {
             socket.data.name = data.name;
@@ -87,7 +91,16 @@ meetingNamespace.on("connection", async (socket: Socket) => {
             const isOwner: boolean = await meetingsService.isUserMeetingOwner(data.roomCode, socket.data.userId);
 
             if (isOwner) {
-                socket.to(data.roomCode).emit("owner-joined");
+                socket.to(data.roomCode + "-waiting").emit("owner-joined");
+
+                const waitingSockets: Set<string> | undefined = meetingNamespace.adapter.rooms.get(data.roomCode + "-waiting");
+
+                if (waitingSockets) {
+                    waitingSockets.forEach((waitingSocketId: string) => {
+                        console.log(meetingNamespace.sockets.get(waitingSocketId))
+                        socket.emit("join-request", { socketId: waitingSocketId, name: meetingNamespace.sockets.get(waitingSocketId)!.data.name });
+                    });
+                }
             }
         }
 
@@ -126,6 +139,12 @@ meetingNamespace.on("connection", async (socket: Socket) => {
         else {
             socket.emit("owner-not-found");
         }
+
+        if (!socket.data.name) {
+            socket.data.name = data.name;
+        }
+
+        socket.join(data.roomCode + "-waiting");
     });
 
     socket.on("approve-request", (socketId: string) => {
@@ -149,46 +168,46 @@ meetingNamespace.on("connection", async (socket: Socket) => {
     });
 
     socket.on("meeting-info-updated", (data: { title: string, isWaitingRoom: boolean, isScreenSharing: boolean, isGuestAllowed: boolean }) => {
-        socket.to(socket.data.roomId).emit("meeting-info-updated", data);
+        socket.to(socket.data.roomCode).emit("meeting-info-updated", data);
     });
 
     socket.on("mute", () => {
-        socket.to(socket.data.roomId).emit("mute", socket.id);
+        socket.to(socket.data.roomCode).emit("mute", socket.id);
     });
 
     socket.on("unmute", () => {
-        socket.to(socket.data.roomId).emit("unmute", socket.id);
+        socket.to(socket.data.roomCode).emit("unmute", socket.id);
     });
 
     socket.on("disable-video", () => {
-        socket.to(socket.data.roomId).emit("disable-video", socket.id);
+        socket.to(socket.data.roomCode).emit("disable-video", socket.id);
     });
 
     socket.on("enable-video", () => {
-        socket.to(socket.data.roomId).emit("enable-video", socket.id);
+        socket.to(socket.data.roomCode).emit("enable-video", socket.id);
     });
 
     socket.on("start-screen-share", () => {
-        socket.to(socket.data.roomId).emit("start-screen-share", socket.id);
+        socket.to(socket.data.roomCode).emit("start-screen-share", socket.id);
     });
 
     socket.on("stop-screen-share", () => {
-        socket.to(socket.data.roomId).emit("stop-screen-share", socket.id);
+        socket.to(socket.data.roomCode).emit("stop-screen-share", socket.id);
     });
 
     socket.on("hand-up", () => {
         socket.data.isHandUp = true;
-        socket.to(socket.data.roomId).emit("hand-up", socket.id);
+        socket.to(socket.data.roomCode).emit("hand-up", socket.id);
     });
 
     socket.on("hand-down", () => {
         socket.data.isHandUp = false;
-        socket.to(socket.data.roomId).emit("hand-down", socket.id);
+        socket.to(socket.data.roomCode).emit("hand-down", socket.id);
     });
 
     socket.on("mute-user", async (socketId: string) => {
         try {
-            const isOwner: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomId, socket.data.userId || "");
+            const isOwner: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomCode, socket.data.userId || "");
 
             if (!isOwner) {
                 return;
@@ -203,7 +222,7 @@ meetingNamespace.on("connection", async (socket: Socket) => {
 
     socket.on("unmute-user", async (socketId: string) => {
         try {
-            const isOwner: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomId, socket.data.userId || "");
+            const isOwner: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomCode, socket.data.userId || "");
 
             if (!isOwner) {
                 return;
@@ -218,7 +237,7 @@ meetingNamespace.on("connection", async (socket: Socket) => {
 
     socket.on("disable-video-user", async (socketId: string) => {
         try {
-            const isOwner: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomId, socket.data.userId || "");
+            const isOwner: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomCode, socket.data.userId || "");
 
             if (!isOwner) {
                 return;
@@ -233,7 +252,7 @@ meetingNamespace.on("connection", async (socket: Socket) => {
 
     socket.on("enable-video-user", async (socketId: string) => {
         try {
-            const isOwner: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomId, socket.data.userId || "");
+            const isOwner: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomCode, socket.data.userId || "");
 
             if (!isOwner) {
                 return;
@@ -248,7 +267,7 @@ meetingNamespace.on("connection", async (socket: Socket) => {
 
     socket.on("remove-user", async (socketId: string) => {
         try {
-            const isOwner: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomId, socket.data.userId || "");
+            const isOwner: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomCode, socket.data.userId || "");
 
             if (!isOwner) {
                 return;
@@ -262,24 +281,24 @@ meetingNamespace.on("connection", async (socket: Socket) => {
     });
 
     socket.on("chat-message", (message: { id: string, senderName: string, content: string }) => {
-        socket.to(socket.data.roomId).emit("chat-message", message);
+        socket.to(socket.data.roomCode).emit("chat-message", message);
     });
 
-    socket.on("leave", (roomId: string) => {
-        socket.to(roomId).emit("user-leave", socket.id);
+    socket.on("leave", (roomCode: string) => {
+        socket.to(roomCode).emit("user-leave", socket.id);
 
-        socket.leave(roomId);
+        socket.leave(roomCode);
     });
 
     socket.on("disconnect", async () => {
-        if (socket.data.roomId) {
-            socket.to(socket.data.roomId).emit("user-leave", socket.id);
+        if (socket.data.roomCode) {
+            socket.to(socket.data.roomCode).emit("user-leave", socket.id);
 
             if (socket.data.userId) {
-                const isOwnerLeaving: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomId, socket.data.userId);
+                const isOwnerLeaving: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomCode, socket.data.userId);
 
                 if (isOwnerLeaving) {
-                    socket.to(socket.data.roomId).emit("owner-left");
+                    socket.to(socket.data.roomCode + "-waiting").emit("owner-left");
                 }
             }
         }
