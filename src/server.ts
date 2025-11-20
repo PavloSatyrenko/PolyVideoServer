@@ -97,7 +97,7 @@ meetingNamespace.on("connection", async (socket: Socket) => {
             return;
         }
 
-        const adminSocketId: string = Array.from(meetingNamespace.adapter.rooms.get(data.roomCode) ?? [])
+        const ownerSocketId: string = Array.from(meetingNamespace.adapter.rooms.get(data.roomCode) ?? [])
             .find((socketId: string) => {
                 const userId: string | undefined = meetingNamespace.sockets.get(socketId)!.data.userId;
 
@@ -108,11 +108,11 @@ meetingNamespace.on("connection", async (socket: Socket) => {
                 return userId === ownerId;
             }) || "";
 
-        if (adminSocketId) {
-            meetingNamespace.to(adminSocketId).emit("join-request", { socketId: socket.id, name: data.name });
+        if (ownerSocketId) {
+            meetingNamespace.to(ownerSocketId).emit("join-request", { socketId: socket.id, name: data.name });
         }
         else {
-            socket.emit("admin-not-found");
+            socket.emit("owner-not-found");
         }
     });
 
