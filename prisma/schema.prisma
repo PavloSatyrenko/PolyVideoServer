@@ -14,14 +14,16 @@ datasource db {
 }
 
 model User {
-    id             String          @id @default(uuid())
-    email          String          @unique
-    name           String
-    surname        String
-    passwordHash   String
-    refreshTokens  RefreshToken[]
-    ownedMeetings  Meeting[]
-    recentMeetings RecentMeeting[]
+    id                   String          @id @default(uuid())
+    email                String          @unique
+    name                 String
+    surname              String
+    passwordHash         String
+    refreshTokens        RefreshToken[]
+    ownedMeetings        Meeting[]
+    recentMeetings       RecentMeeting[]
+    sendedChatMessages   ChatMessage[]   @relation("senderUser")
+    receivedChatMessages ChatMessage[]   @relation("receiverUser")
 }
 
 model RefreshToken {
@@ -57,4 +59,14 @@ model RecentMeeting {
     addedAt   DateTime @default(now())
 
     @@unique([userId, meetingId])
+}
+
+model ChatMessage {
+    id         String   @id @default(uuid())
+    content    String
+    senderId   String
+    sender     User     @relation("senderUser", fields: [senderId], references: [id])
+    receiverId String
+    receiver   User     @relation("receiverUser", fields: [receiverId], references: [id])
+    sentAt     DateTime @default(now())
 }

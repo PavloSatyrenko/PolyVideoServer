@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes";
 import meetingsRoutes from "./routes/meetings.routes";
+import chatsRoutes from "routes/chats.routes";
 
 const app: Express = express();
 
@@ -17,5 +18,6 @@ app.use(cookieParser());
 
 app.use("/auth", authRoutes);
 app.use("/meetings", meetingsRoutes);
+app.use("/chats", chatsRoutes);
 
 export default app;

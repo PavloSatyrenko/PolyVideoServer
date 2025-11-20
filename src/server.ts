@@ -233,3 +233,43 @@ meetingNamespace.on("connection", (socket: Socket) => {
         }
     })
 });
+
+
+const chatNamespace: Namespace = io.of("/chat");
+
+chatNamespace.on("connection", async (socket: Socket) => {
+    const cookies: Map<string, string> = new Map();
+
+    socket.request.headers.cookie?.split("; ").forEach((string: string) => {
+        const [key, value]: string[] = string.split("=");
+        cookies.set(key, value);
+    });
+
+    const accessToken: string | undefined = cookies.get("__Secure-AccessToken");
+    const refreshToken: string | undefined = cookies.get("__Secure-RefreshToken");
+
+    let userId: string | undefined = undefined;
+
+    if (accessToken) {
+        userId = jwt.verifyAccessToken(accessToken)?.id;
+    }
+
+    if (!userId && refreshToken) {
+        const newAccessToken: string | null = await authService.refreshAccessToken(refreshToken);
+
+        if (newAccessToken) {
+            userId = jwt.verifyAccessToken(newAccessToken)?.id;
+        }
+    }
+
+    if (!userId) {
+        socket.disconnect();
+        return;
+    }
+
+    socket.data.userId = userId;
+
+    socket.on("chat-message", (message: { userId: string, content: string }) => {
+        socket.to(userId).emit("chat-message", { socketId: socket.id, content: message.content });
+    });
+});
