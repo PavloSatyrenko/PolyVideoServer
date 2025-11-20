@@ -67,6 +67,29 @@ meetingNamespace.on("connection", (socket: Socket) => {
         );
     });
 
+    socket.on("request-to-join", (data: { roomCode: string, name: string }) => {
+        const adminId: string = Array.from(meetingNamespace.adapter.rooms.get(data.roomCode) ?? [])
+            .find((socketId: string) => {
+                const socketInRoom: Socket | undefined = meetingNamespace.sockets.get(socketId);
+                return socketInRoom && socketInRoom.data.userId; // Assuming the first user with userId is the admin
+            }) || "";
+
+        if (adminId) {
+            meetingNamespace.to(adminId).emit("join-request", { socketId: socket.id, name: data.name });
+        }
+        else {
+            socket.emit("admin-not-found");
+        }
+    });
+
+    socket.on("approve-request", (socketId: string) => {
+        meetingNamespace.to(socketId).emit("request-approved");
+    });
+
+    socket.on("deny-request", (socketId: string) => {
+        meetingNamespace.to(socketId).emit("request-denied");
+    });
+
     socket.on("offer", (data: { socketId: string, offer: RTCSessionDescriptionInit }) => {
         meetingNamespace.to(data.socketId).emit("offer", { socketId: socket.id, offer: data.offer });
     })
@@ -168,7 +191,7 @@ meetingNamespace.on("connection", (socket: Socket) => {
 
             if (!isOwner) {
                 return;
-            }   
+            }
         }
         catch {
             return;
