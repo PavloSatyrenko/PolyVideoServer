@@ -134,5 +134,16 @@ export const meetingsRepository = {
                 isGuestAllowed: isGuestAllowed
             }
         });
+    },
+
+    async transferMeetingOwnership(meetingId: string, newOwnerId: string): Promise<void> {
+        await prisma.meeting.update({
+            where: {
+                id: meetingId
+            },
+            data: {
+                ownerId: newOwnerId
+            }
+        });
     }
 }

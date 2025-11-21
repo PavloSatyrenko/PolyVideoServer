@@ -157,5 +157,21 @@ export const meetingsService = {
         }
 
         return meeting.ownerId === userId;
+    },
+
+    async transferMeetingOwnership(meetingCode: string, userId: string, newOwnerId: string): Promise<number> {
+        const meeting: Meeting | null = await meetingsRepository.getMeetingByCode(meetingCode);
+
+        if (!meeting) {
+            return 404;
+        }
+
+        if (meeting.ownerId !== userId) {
+            return 403;
+        }
+
+        await meetingsRepository.transferMeetingOwnership(meeting.id, newOwnerId);
+
+        return 200;
     }
-}
+};

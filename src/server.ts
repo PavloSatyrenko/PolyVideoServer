@@ -85,7 +85,7 @@ meetingNamespace.on("connection", async (socket: Socket) => {
             socket.data.name = data.name;
         }
 
-        socket.to(data.roomCode).emit("new-user", { socketId: socket.id, name: socket.data.name });
+        socket.to(data.roomCode).emit("new-user", { socketId: socket.id, name: socket.data.name, userId: socket.data.userId });
 
         if (socket.data.userId) {
             const isOwner: boolean = await meetingsService.isUserMeetingOwner(data.roomCode, socket.data.userId);
@@ -108,6 +108,7 @@ meetingNamespace.on("connection", async (socket: Socket) => {
             .map((socketId: string) => ({
                 socketId: socketId,
                 name: meetingNamespace.sockets.get(socketId)!.data.name,
+                userId: meetingNamespace.sockets.get(socketId)!.data.userId,
                 isHandUp: meetingNamespace.sockets.get(socketId)!.data.isHandUp
             }))
         );
@@ -279,6 +280,26 @@ meetingNamespace.on("connection", async (socket: Socket) => {
         }
 
         meetingNamespace.to(socketId).emit("removed-from-meeting");
+    });
+
+    socket.on("transfer-ownership", async (participantId: string) => {
+        try {
+            const isOwner: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomCode, socket.data.userId || "");
+
+            if (!isOwner) {
+                return;
+            }
+        }
+        catch {
+            return;
+        }
+
+        const status: number = await meetingsService.transferMeetingOwnership(socket.data.roomCode, socket.data.userId || "", participantId);
+
+        if (status === 200) {
+            socket.to(socket.data.roomCode).emit("ownership-transferred", participantId);
+            socket.emit("ownership-transferred", participantId);
+        }
     });
 
     socket.on("chat-message", (message: { id: string, senderName: string, content: string }) => {
