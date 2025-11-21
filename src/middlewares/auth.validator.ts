@@ -11,14 +11,12 @@ export const authValidator = {
             .trim()
             .notEmpty().withMessage("Name is required")
             .isString().withMessage("Name must be a string")
-            .isLength({ min: 2, max: 100 }).withMessage("Name must be between 2 and 100 characters")
-            .escape(),
+            .isLength({ min: 2, max: 100 }).withMessage("Name must be between 2 and 100 characters"),
         body("surname")
             .trim()
             .notEmpty().withMessage("Surname is required")
             .isString().withMessage("Surname must be a string")
-            .isLength({ min: 2, max: 100 }).withMessage("Surname must be between 2 and 100 characters")
-            .escape(),
+            .isLength({ min: 2, max: 100 }).withMessage("Surname must be between 2 and 100 characters"),
         body("password")
             .trim()
             .notEmpty().withMessage("Password is required")

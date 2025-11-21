@@ -7,8 +7,7 @@ export const meetingsValidator = {
             .trim()
             .notEmpty().withMessage("Title is required")
             .isString().withMessage("Title must be a string")
-            .isLength({ min: 2, max: 200 }).withMessage("Title must be between 2 and 200 characters")
-            .escape(),
+            .isLength({ min: 2, max: 200 }).withMessage("Title must be between 2 and 200 characters"),
         body("isGuestAllowed")
             .notEmpty().withMessage("isGuestAllowed is required")
             .isBoolean().withMessage("isGuestAllowed must be a boolean"),
