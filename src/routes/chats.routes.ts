@@ -8,5 +8,6 @@ const router: Router = Router();
 
 router.get("/", authMiddleware, chatsController.getChats);
 router.post("/", authMiddleware, chatsValidator.sendMessage, validate, chatsController.sendMessage);
+router.get("/:chatUserId", authMiddleware, chatsValidator.getMessages, validate, chatsController.getMessages);
 
 export default router;

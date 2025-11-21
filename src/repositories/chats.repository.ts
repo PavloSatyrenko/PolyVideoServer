@@ -58,5 +58,43 @@ export const chatsRepository = {
                 content,
             }
         });
+    },
+
+    async getMessagesBetweenUsers(userId: string, chatUserId: string, afterMessageId?: string): Promise<ChatMessage[]> {
+        let afterMessage: ChatMessage | null = null;
+
+        if (afterMessageId) {
+            afterMessage = await prisma.chatMessage.findUnique({
+                where: {
+                    id: afterMessageId,
+                }
+            });
+        }
+
+        return await prisma.chatMessage.findMany({
+            where: {
+                OR: [
+                    {
+                        senderId: userId,
+                        receiverId: chatUserId,
+                    },
+                    {
+                        senderId: chatUserId,
+                        receiverId: userId,
+                    }
+                ],
+                ...(
+                    afterMessage ? {
+                        sentAt: {
+                            gt: afterMessage.sentAt,
+                        }
+                    } : {}
+                )
+            },
+            orderBy: {
+                sentAt: "desc"
+            },
+            take: 20
+        });
     }
 }
