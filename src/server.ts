@@ -97,7 +97,6 @@ meetingNamespace.on("connection", async (socket: Socket) => {
 
                 if (waitingSockets) {
                     waitingSockets.forEach((waitingSocketId: string) => {
-                        console.log(meetingNamespace.sockets.get(waitingSocketId))
                         socket.emit("join-request", { socketId: waitingSocketId, name: meetingNamespace.sockets.get(waitingSocketId)!.data.name });
                     });
                 }
@@ -145,6 +144,8 @@ meetingNamespace.on("connection", async (socket: Socket) => {
         }
 
         socket.join(data.roomCode + "-waiting");
+
+        socket.data.roomCode = data.roomCode + "-waiting";
     });
 
     socket.on("approve-request", (socketId: string) => {
@@ -300,6 +301,25 @@ meetingNamespace.on("connection", async (socket: Socket) => {
                 if (isOwnerLeaving) {
                     socket.to(socket.data.roomCode + "-waiting").emit("owner-left");
                 }
+            }
+        }
+
+        if (socket.data.roomCode?.endsWith("-waiting")) {
+            const ownerId: string = (await meetingsService.getMeetingByCode(socket.data.roomCode.slice(0, -8)))?.ownerId || "";
+
+            const ownerSocketId: string = Array.from(meetingNamespace.adapter.rooms.get(socket.data.roomCode.slice(0, -8)) ?? [])
+                .find((socketId: string) => {
+                    const userId: string | undefined = meetingNamespace.sockets.get(socketId)!.data.userId;
+
+                    if (!userId) {
+                        return false;
+                    }
+
+                    return userId === ownerId;
+                }) || "";
+
+            if (ownerSocketId) {
+                meetingNamespace.to(ownerSocketId).emit("request-cancelled", socket.id);
             }
         }
     })
