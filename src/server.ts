@@ -169,7 +169,18 @@ meetingNamespace.on("connection", async (socket: Socket) => {
         meetingNamespace.to(data.socketId).emit("iceCandidate", { socketId: socket.id, candidate: data.candidate });
     });
 
-    socket.on("meeting-info-updated", (data: { title: string, isWaitingRoom: boolean, isScreenSharing: boolean, isGuestAllowed: boolean }) => {
+    socket.on("meeting-info-updated", async (data: { title: string, isWaitingRoom: boolean, isScreenSharing: boolean, isGuestAllowed: boolean }) => {
+        try {
+            const isOwner: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomCode, socket.data.userId || "");
+
+            if (!isOwner) {
+                return;
+            }
+        }
+        catch {
+            return;
+        }
+
         socket.to(socket.data.roomCode).emit("meeting-info-updated", data);
     });
 
