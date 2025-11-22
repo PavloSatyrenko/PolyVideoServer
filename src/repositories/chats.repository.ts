@@ -50,8 +50,8 @@ export const chatsRepository = {
         });
     },
 
-    async createMessage(senderId: string, receiverId: string, content: string): Promise<void> {
-        await prisma.chatMessage.create({
+    async createMessage(senderId: string, receiverId: string, content: string): Promise<ChatMessage> {
+        return await prisma.chatMessage.create({
             data: {
                 senderId,
                 receiverId,
@@ -60,13 +60,13 @@ export const chatsRepository = {
         });
     },
 
-    async getMessagesBetweenUsers(userId: string, chatUserId: string, afterMessageId?: string): Promise<ChatMessage[]> {
-        let afterMessage: ChatMessage | null = null;
+    async getMessagesBetweenUsers(userId: string, chatUserId: string, beforeMessageId?: string): Promise<ChatMessage[]> {
+        let beforeMessage: ChatMessage | null = null;
 
-        if (afterMessageId) {
-            afterMessage = await prisma.chatMessage.findUnique({
+        if (beforeMessageId) {
+            beforeMessage = await prisma.chatMessage.findUnique({
                 where: {
-                    id: afterMessageId,
+                    id: beforeMessageId,
                 }
             });
         }
@@ -84,9 +84,9 @@ export const chatsRepository = {
                     }
                 ],
                 ...(
-                    afterMessage ? {
+                    beforeMessage ? {
                         sentAt: {
-                            gt: afterMessage.sentAt,
+                            lt: beforeMessage.sentAt,
                         }
                     } : {}
                 )

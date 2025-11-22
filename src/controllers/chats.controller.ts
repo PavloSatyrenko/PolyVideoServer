@@ -38,10 +38,10 @@ export const chatsController = {
     async getMessages(request: Request, response: Response): Promise<void> {
         try {
             const chatUserId: string = request.params.chatUserId;
-            const afterMessageId: string | undefined = request.query.after as string | undefined;
+            const beforeMessageId: string | undefined = request.query.before as string | undefined;
             const userId: string = request.user!.id;
 
-            const messages: ChatMessage[] = await chatsService.getMessagesBetweenUsers(userId, chatUserId, afterMessageId);
+            const messages: ChatMessage[] = await chatsService.getMessagesBetweenUsers(userId, chatUserId, beforeMessageId);
 
             response.status(200).json(messages);
         }

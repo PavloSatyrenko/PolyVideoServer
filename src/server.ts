@@ -7,8 +7,9 @@ import { Server } from "http";
 import { Server as ioServer, Namespace, Socket } from "socket.io";
 import { jwt } from "utils/jwt";
 import { authService } from "services/auth.service";
-import { User } from "@prisma/client";
+import { ChatMessage, User } from "@prisma/client";
 import { meetingsService } from "services/meetings.service";
+import { chatsService } from "services/chats.service";
 
 const server: Server = app.listen(PORT, () => {
     console.log("Server listening on port " + PORT);
@@ -408,7 +409,16 @@ chatNamespace.use(async (socket: Socket, next) => {
 });
 
 chatNamespace.on("connection", async (socket: Socket) => {
-    socket.on("chat-message", (message: { userId: string, content: string }) => {
-        socket.to(message.userId).emit("chat-message", { socketId: socket.id, content: message.content });
+    socket.on("chat-message", async (message: { userId: string, content: string }) => {
+        const newMessage: ChatMessage = await chatsService.sendMessage(socket.data.userId, message.userId, message.content);
+
+        const userSocketId: string = Array.from(chatNamespace.sockets)
+            .find(([_, socket]: [string, Socket]) => socket.data.userId === message.userId)?.[0] || "";
+
+        if (userSocketId) {
+            chatNamespace.to(userSocketId).emit("chat-message", { message: newMessage, userId: socket.data.userId });
+        }
+
+        socket.emit("message-sent", { message: newMessage, userId: message.userId });
     });
 });

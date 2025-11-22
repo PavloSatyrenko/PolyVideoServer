@@ -1,4 +1,4 @@
-import { body, param } from "express-validator";
+import { body, param, query } from "express-validator";
 
 export const chatsValidator = {
     sendMessage: [
@@ -16,8 +16,8 @@ export const chatsValidator = {
         param("chatUserId")
             .notEmpty().withMessage("Chat User ID is required")
             .isUUID().withMessage("Chat User ID must be a valid UUID"),
-        body("after")
+        query("before")
             .optional()
-            .isUUID().withMessage("After Message ID must be a valid UUID"),
+            .isUUID().withMessage("Before Message ID must be a valid UUID"),
     ],
 }
