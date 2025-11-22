@@ -85,13 +85,13 @@ meetingNamespace.on("connection", async (socket: Socket) => {
             socket.data.name = data.name;
         }
 
-        socket.to(data.roomCode).emit("new-user", { socketId: socket.id, name: socket.data.name, userId: socket.data.userId });
+        meetingNamespace.to(data.roomCode).emit("new-user", { socketId: socket.id, name: socket.data.name, userId: socket.data.userId });
 
         if (socket.data.userId) {
             const isOwner: boolean = await meetingsService.isUserMeetingOwner(data.roomCode, socket.data.userId);
 
             if (isOwner) {
-                socket.to(data.roomCode + "-waiting").emit("owner-joined");
+                meetingNamespace.to(data.roomCode + "-waiting").emit("owner-joined");
 
                 const waitingSockets: Set<string> | undefined = meetingNamespace.adapter.rooms.get(data.roomCode + "-waiting");
 
@@ -181,41 +181,41 @@ meetingNamespace.on("connection", async (socket: Socket) => {
             return;
         }
 
-        socket.to(socket.data.roomCode).emit("meeting-info-updated", data);
+        meetingNamespace.to(socket.data.roomCode).emit("meeting-info-updated", data);
     });
 
     socket.on("mute", () => {
-        socket.to(socket.data.roomCode).emit("mute", socket.id);
+        meetingNamespace.to(socket.data.roomCode).emit("mute", socket.id);
     });
 
     socket.on("unmute", () => {
-        socket.to(socket.data.roomCode).emit("unmute", socket.id);
+        meetingNamespace.to(socket.data.roomCode).emit("unmute", socket.id);
     });
 
     socket.on("disable-video", () => {
-        socket.to(socket.data.roomCode).emit("disable-video", socket.id);
+        meetingNamespace.to(socket.data.roomCode).emit("disable-video", socket.id);
     });
 
     socket.on("enable-video", () => {
-        socket.to(socket.data.roomCode).emit("enable-video", socket.id);
+        meetingNamespace.to(socket.data.roomCode).emit("enable-video", socket.id);
     });
 
     socket.on("start-screen-share", () => {
-        socket.to(socket.data.roomCode).emit("start-screen-share", socket.id);
+        meetingNamespace.to(socket.data.roomCode).emit("start-screen-share", socket.id);
     });
 
     socket.on("stop-screen-share", () => {
-        socket.to(socket.data.roomCode).emit("stop-screen-share", socket.id);
+        meetingNamespace.to(socket.data.roomCode).emit("stop-screen-share", socket.id);
     });
 
     socket.on("hand-up", () => {
         socket.data.isHandUp = true;
-        socket.to(socket.data.roomCode).emit("hand-up", socket.id);
+        meetingNamespace.to(socket.data.roomCode).emit("hand-up", socket.id);
     });
 
     socket.on("hand-down", () => {
         socket.data.isHandUp = false;
-        socket.to(socket.data.roomCode).emit("hand-down", socket.id);
+        meetingNamespace.to(socket.data.roomCode).emit("hand-down", socket.id);
     });
 
     socket.on("mute-user", async (socketId: string) => {
@@ -308,30 +308,29 @@ meetingNamespace.on("connection", async (socket: Socket) => {
         const status: number = await meetingsService.transferMeetingOwnership(socket.data.roomCode, socket.data.userId || "", participantId);
 
         if (status === 200) {
-            socket.to(socket.data.roomCode).emit("ownership-transferred", participantId);
+            meetingNamespace.to(socket.data.roomCode).emit("ownership-transferred", participantId);
             socket.emit("ownership-transferred", participantId);
         }
     });
 
     socket.on("chat-message", (message: { id: string, senderName: string, content: string }) => {
-        socket.to(socket.data.roomCode).emit("chat-message", message);
+        meetingNamespace.to(socket.data.roomCode).emit("chat-message", message);
     });
 
     socket.on("leave", (roomCode: string) => {
-        socket.to(roomCode).emit("user-leave", socket.id);
-
+        meetingNamespace.to(roomCode).emit("user-leave", socket.id);
         socket.leave(roomCode);
     });
 
     socket.on("disconnect", async () => {
         if (socket.data.roomCode) {
-            socket.to(socket.data.roomCode).emit("user-leave", socket.id);
+            meetingNamespace.to(socket.data.roomCode).emit("user-leave", socket.id);
 
             if (socket.data.userId) {
                 const isOwnerLeaving: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomCode, socket.data.userId);
 
                 if (isOwnerLeaving) {
-                    socket.to(socket.data.roomCode + "-waiting").emit("owner-left");
+                    meetingNamespace.to(socket.data.roomCode + "-waiting").emit("owner-left");
                 }
             }
         }
