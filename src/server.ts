@@ -81,6 +81,7 @@ meetingNamespace.on("connection", async (socket: Socket) => {
 
         socket.data.roomCode = data.roomCode;
         socket.data.isHandUp = false;
+        socket.data.isScreenSharing = false;
 
         if (!socket.data.name) {
             socket.data.name = data.name;
@@ -110,7 +111,8 @@ meetingNamespace.on("connection", async (socket: Socket) => {
                 socketId: socketId,
                 name: meetingNamespace.sockets.get(socketId)!.data.name,
                 userId: meetingNamespace.sockets.get(socketId)!.data.userId,
-                isHandUp: meetingNamespace.sockets.get(socketId)!.data.isHandUp
+                isHandUp: meetingNamespace.sockets.get(socketId)!.data.isHandUp,
+                isScreenSharing: meetingNamespace.sockets.get(socketId)!.data.isScreenSharing
             }))
         );
     });
@@ -158,16 +160,16 @@ meetingNamespace.on("connection", async (socket: Socket) => {
         meetingNamespace.to(socketId).emit("request-denied");
     });
 
-    socket.on("offer", (data: { socketId: string, offer: RTCSessionDescriptionInit }) => {
-        meetingNamespace.to(data.socketId).emit("offer", { socketId: socket.id, offer: data.offer });
+    socket.on("offer", (data: { socketId: string, offer: RTCSessionDescriptionInit, isScreenShare: boolean }) => {
+        meetingNamespace.to(data.socketId).emit("offer", { socketId: socket.id, offer: data.offer, isScreenShare: data.isScreenShare });
     })
 
-    socket.on("answer", (data: { socketId: string, answer: RTCSessionDescriptionInit }) => {
-        meetingNamespace.to(data.socketId).emit("answer", { socketId: socket.id, answer: data.answer });
+    socket.on("answer", (data: { socketId: string, answer: RTCSessionDescriptionInit, isScreenShare: boolean }) => {
+        meetingNamespace.to(data.socketId).emit("answer", { socketId: socket.id, answer: data.answer, isScreenShare: data.isScreenShare });
     });
 
-    socket.on("iceCandidate", (data: { socketId: string, candidate: RTCIceCandidate }) => {
-        meetingNamespace.to(data.socketId).emit("iceCandidate", { socketId: socket.id, candidate: data.candidate });
+    socket.on("iceCandidate", (data: { socketId: string, candidate: RTCIceCandidate, isScreenShare: boolean }) => {
+        meetingNamespace.to(data.socketId).emit("iceCandidate", { socketId: socket.id, candidate: data.candidate, isScreenShare: data.isScreenShare });
     });
 
     socket.on("meeting-info-updated", async (data: { title: string, isWaitingRoom: boolean, isScreenSharing: boolean, isGuestAllowed: boolean }) => {
@@ -202,10 +204,14 @@ meetingNamespace.on("connection", async (socket: Socket) => {
     });
 
     socket.on("start-screen-share", () => {
+        socket.data.isScreenSharing = true;
+
         socket.to(socket.data.roomCode).emit("start-screen-share", socket.id);
     });
 
     socket.on("stop-screen-share", () => {
+        socket.data.isScreenSharing = false;
+
         socket.to(socket.data.roomCode).emit("stop-screen-share", socket.id);
     });
 
