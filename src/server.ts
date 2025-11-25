@@ -168,8 +168,8 @@ meetingNamespace.on("connection", async (socket: Socket) => {
         meetingNamespace.to(data.socketId).emit("answer", { socketId: socket.id, answer: data.answer, isScreenShare: data.isScreenShare });
     });
 
-    socket.on("iceCandidate", (data: { socketId: string, candidate: RTCIceCandidate, isScreenShare: boolean }) => {
-        meetingNamespace.to(data.socketId).emit("iceCandidate", { socketId: socket.id, candidate: data.candidate, isScreenShare: data.isScreenShare });
+    socket.on("iceCandidate", (data: { socketId: string, candidate: RTCIceCandidate, isScreenShare: boolean, role: string }) => {
+        meetingNamespace.to(data.socketId).emit("iceCandidate", { socketId: socket.id, candidate: data.candidate, isScreenShare: data.isScreenShare, role: data.role });
     });
 
     socket.on("meeting-info-updated", async (data: { title: string, isWaitingRoom: boolean, isScreenSharing: boolean, isGuestAllowed: boolean }) => {
