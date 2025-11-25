@@ -24,6 +24,9 @@ model User {
     recentMeetings       RecentMeeting[]
     sendedChatMessages   ChatMessage[]   @relation("senderUser")
     receivedChatMessages ChatMessage[]   @relation("receiverUser")
+
+    @@index([name])
+    @@index([surname])
 }
 
 model RefreshToken {
