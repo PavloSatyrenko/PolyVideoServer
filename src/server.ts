@@ -19,9 +19,7 @@ const io: ioServer = new ioServer(server, {
     cors: {
         origin: ["http://localhost:4200", "https://polyvideo-1ca6f.web.app"],
         credentials: true
-    },
-    pingInterval: 2000,
-    pingTimeout: 5000
+    }
 });
 
 const meetingNamespace: Namespace = io.of("/meeting");
