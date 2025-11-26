@@ -19,7 +19,9 @@ const io: ioServer = new ioServer(server, {
     cors: {
         origin: ["http://localhost:4200", "https://polyvideo-1ca6f.web.app"],
         credentials: true
-    }
+    },
+    pingInterval: 2000,
+    pingTimeout: 5000
 });
 
 const meetingNamespace: Namespace = io.of("/meeting");
@@ -138,9 +140,6 @@ meetingNamespace.on("connection", async (socket: Socket) => {
 
         if (ownerSocketId) {
             meetingNamespace.to(ownerSocketId).emit("join-request", { socketId: socket.id, name: data.name });
-        }
-        else {
-            socket.emit("owner-not-found");
         }
 
         if (!socket.data.name) {
