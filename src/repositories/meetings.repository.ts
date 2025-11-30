@@ -1,4 +1,4 @@
-import { Meeting, PrismaClient, User } from "@prisma/client";
+import { Meeting, PrismaClient } from "@prisma/client";
 
 const prisma: PrismaClient = new PrismaClient();
 

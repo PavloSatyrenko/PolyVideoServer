@@ -6,7 +6,7 @@ type ChatWithUser = ChatMessage & { user: Omit<User, "passwordHash"> };
 
 export const chatsService = {
     async getChatsByUserId(userId: string): Promise<ChatWithUser[]> {
-        const userIds: Set<string> = new Set();
+        const userIds: Set<string> = new Set<string>();
 
         const allRecentChats: ChatWithUser[] = (await chatsRepository.getChatsByUserId(userId))
             .map((chat: ChatWithRecieverAndSender) => {
@@ -14,7 +14,7 @@ export const chatsService = {
 
                 return {
                     ...restChat,
-                    user: chat.senderId === userId ? chat.receiver : chat.sender
+                    user: chat.senderId === userId ? receiver : sender
                 };
             });
 

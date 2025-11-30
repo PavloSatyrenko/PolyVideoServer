@@ -25,7 +25,7 @@ const io: ioServer = new ioServer(server, {
 const meetingNamespace: Namespace = io.of("/meeting");
 
 meetingNamespace.use(async (socket: Socket, next) => {
-    const cookies: Map<string, string> = new Map();
+    const cookies = new Map<string, string>();
 
     socket.request.headers.cookie?.split("; ").forEach((string: string) => {
         const [key, value]: string[] = string.split("=");
@@ -363,7 +363,7 @@ meetingNamespace.on("connection", async (socket: Socket) => {
 const chatNamespace: Namespace = io.of("/chat");
 
 chatNamespace.use(async (socket: Socket, next) => {
-    const cookies: Map<string, string> = new Map();
+    const cookies = new Map<string, string>();
 
     socket.request.headers.cookie?.split("; ").forEach((string: string) => {
         const [key, value]: string[] = string.split("=");
@@ -415,7 +415,7 @@ chatNamespace.on("connection", async (socket: Socket) => {
         const newMessage: ChatMessage = await chatsService.sendMessage(socket.data.userId, message.userId, message.content);
 
         const userSocketId: string = Array.from(chatNamespace.sockets)
-            .find(([_, socket]: [string, Socket]) => socket.data.userId === message.userId)?.[0] || "";
+            .find(([, socket]: [string, Socket]) => socket.data.userId === message.userId)?.[0] || "";
 
         if (userSocketId) {
             chatNamespace.to(userSocketId).emit("chat-message", { message: newMessage, userId: socket.data.userId });

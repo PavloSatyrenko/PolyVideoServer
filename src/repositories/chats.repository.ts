@@ -22,7 +22,7 @@ export const chatsRepository = {
             _max: {
                 sentAt: true
             }
-        }) as any as LastMessageType[];
+        }) as unknown as LastMessageType[];
 
         return await prisma.chatMessage.findMany({
             where: {

@@ -1,6 +1,6 @@
 import { meetingsController } from "controllers/meetings.controller";
 import { Router } from "express";
-import { authMiddleware, optionalAuthMiddleware } from "middlewares/auth.middleware";
+import { authMiddleware } from "middlewares/auth.middleware";
 import { meetingsValidator } from "middlewares/meetings.validator";
 import { validate } from "utils/validate";
 
