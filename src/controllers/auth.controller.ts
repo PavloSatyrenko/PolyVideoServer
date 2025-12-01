@@ -32,7 +32,7 @@ export const authController = {
                 response.status(201).json({ message: "Signed up successfully" });
             }
             else {
-                response.status(400).json({ message: "User account with that phone number already exists" });
+                response.status(400).json({ message: "User account with that email already exists" });
             }
         }
         catch (error) {
