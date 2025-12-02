@@ -139,6 +139,9 @@ meetingNamespace.on("connection", async (socket: Socket) => {
         if (ownerSocketId) {
             meetingNamespace.to(ownerSocketId).emit("join-request", { socketId: socket.id, name: data.name });
         }
+        else {
+            socket.emit("owner-not-found");
+        }
 
         if (!socket.data.name) {
             socket.data.name = data.name;
