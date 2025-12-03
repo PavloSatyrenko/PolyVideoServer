@@ -324,13 +324,13 @@ meetingNamespace.on("connection", async (socket: Socket) => {
     });
 
     socket.on("leave", (roomCode: string) => {
-        socket.to(roomCode).emit("user-leave", socket.id);
+        socket.to(roomCode).emit("user-leave", { socketId: socket.id, name: socket.data.name });
         socket.leave(roomCode);
     });
 
     socket.on("disconnect", async () => {
         if (socket.data.roomCode) {
-            socket.to(socket.data.roomCode).emit("user-leave", socket.id);
+            socket.to(socket.data.roomCode).emit("user-leave", { socketId: socket.id, name: socket.data.name });
 
             if (socket.data.userId) {
                 const isOwnerLeaving: boolean = await meetingsService.isUserMeetingOwner(socket.data.roomCode, socket.data.userId);
