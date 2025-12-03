@@ -35,7 +35,12 @@ export const chatsService = {
         return await chatsRepository.createMessage(senderId, receiverId, content);
     },
 
-    async getMessagesBetweenUsers(userId: string, chatUserId: string, beforeMessageId?: string): Promise<ChatMessage[]> {
-        return (await chatsRepository.getMessagesBetweenUsers(userId, chatUserId, beforeMessageId)).reverse();
+    async getMessagesBetweenUsers(userId: string, chatUserId: string, beforeMessageId?: string): Promise<{ messages: ChatMessage[], hasMore: boolean }> {
+        const { messages, hasMore } = await chatsRepository.getMessagesBetweenUsers(userId, chatUserId, beforeMessageId);
+
+        return {
+            messages: messages.reverse(),
+            hasMore
+        };
     }
 }

@@ -60,7 +60,7 @@ export const chatsRepository = {
         });
     },
 
-    async getMessagesBetweenUsers(userId: string, chatUserId: string, beforeMessageId?: string): Promise<ChatMessage[]> {
+    async getMessagesBetweenUsers(userId: string, chatUserId: string, beforeMessageId?: string): Promise<{ messages: ChatMessage[], hasMore: boolean }> {
         let beforeMessage: ChatMessage | null = null;
 
         if (beforeMessageId) {
@@ -71,7 +71,7 @@ export const chatsRepository = {
             });
         }
 
-        return await prisma.chatMessage.findMany({
+        const messages = await prisma.chatMessage.findMany({
             where: {
                 OR: [
                     {
@@ -94,7 +94,12 @@ export const chatsRepository = {
             orderBy: {
                 sentAt: "desc"
             },
-            take: 20
+            take: 21
         });
+
+        return {
+            messages: messages.slice(0, 20),
+            hasMore: messages.length > 20
+        };
     }
 }

@@ -41,9 +41,9 @@ export const chatsController = {
             const beforeMessageId: string | undefined = request.query.before as string | undefined;
             const userId: string = request.user!.id;
 
-            const messages: ChatMessage[] = await chatsService.getMessagesBetweenUsers(userId, chatUserId, beforeMessageId);
+            const responseData: { messages: ChatMessage[], hasMore: boolean } = await chatsService.getMessagesBetweenUsers(userId, chatUserId, beforeMessageId);
 
-            response.status(200).json(messages);
+            response.status(200).json(responseData);
         }
         catch (error) {
             console.error(error);
